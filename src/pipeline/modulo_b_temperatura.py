@@ -27,8 +27,13 @@ def detect_fire(image: np.ndarray, temperature: float = FIRE_THRESHOLD_K, min_ar
         Número de agrupamentos (objetos) detectados.
     """
     pixels = np.copy(image)
-    pixels[pixels < temperature] = 0
-    pixels[pixels >= temperature] = 1
+    # Mask out NaNs
+    pixels[np.isnan(pixels)] = 0
+    
+    # Apply threshold
+    hot_mask = pixels >= temperature
+    pixels[hot_mask] = 1
+    pixels[~hot_mask] = 0
 
     # Opcional: rotulagem de componentes conectados para contar focos distintos
     labeled, n_objects = ndimage.label(pixels)

@@ -20,6 +20,8 @@ def calcular_indice_umidade(brightness_temp: np.ndarray) -> float:
     float: Índice de umidade médio (0 = muito seco, 100 = muito úmido).
     """
     mean_bt = float(np.nanmean(brightness_temp))
+    if np.isnan(mean_bt):
+        return np.nan
 
     # Inversão e normalização linear
     indice = (WV_TEMP_MAX - mean_bt) / (WV_TEMP_MAX - WV_TEMP_MIN) * 100.0

@@ -11,8 +11,10 @@ services:
     volumes:
       - ./src:/app/src
       - ./data:/app/data
+    security_opt:
+      - seccomp=unconfined
     environment:
       - PYTHONPATH=/app/src
-    # Esse container vai executar o comando padrão do Dockerfile:
-    # ["python", "src/pipeline/main.py"]
-    # E então será encerrado.
+      - USE_LOCAL_CACHE=true
+    # Comando explícito para executar o pipeline
+    command: ["python", "src/pipeline/main.py"]

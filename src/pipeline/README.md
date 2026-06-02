@@ -30,9 +30,19 @@ De forma proativa, o script está configurado com limites de segurança rígidos
 **Por que essas restrições?**
 Processar anos de histórico para milhares de municípios sobrecarregaria as APIs satelitais do INPE, exigiria uma quantidade massiva de memória RAM da máquina local e a execução demoraria horas ou dias. O limite garante testes com *feedback* quase imediato.
 
-## 4. Como Executar
+## 4. Arquitetura de Acesso a Dados (Local/Docker vs Databricks)
 
-Garanta que seu ambiente virtual Python esteja ativado e todas as dependências estejam instaladas (conforme definido no setup da Fase 2).
+Os dados do satélite GOES-16 e os dados do SAMeT encontram-se em formato NetCDF4 no Brazil Data Cube. Para acessar esses dados de maneira eficiente via rede, o pipeline geoespacial utiliza o GDAL com o driver de rede virtual `/vsicurl/`. No entanto, existe uma limitação técnica em ecossistemas locais:
+* **Dependência no Kernel:** A leitura HTTP via `/vsicurl/` com o driver NetCDF *exige* suporte à diretiva `userfaultfd` diretamente no kernel Linux em uso.
+* **No Databricks (Produção / Cloud):** As instâncias do Databricks rodam em um kernel Linux completo. Logo, a leitura de rede nativa ocorre em altíssima performance (em pedaços granulares, on-demand), eliminando a necessidade de transferir arquivos de ~300MB para a máquina localmente.
+* **No Docker Desktop (Ambiente de Teste Local Windows c/ WSL2 ou Hyper-V):** A máquina virtual Linux enxuta provida pelo Docker Desktop (seja via WSL2 ou MobyLinux no Hyper-V) frequentemente carece do módulo `userfaultfd` ativado no kernel. Para contornar e viabilizar testes, expomos uma diretiva de infraestrutura como código (variável de ambiente). O `docker-compose.yml` introduz a diretiva `USE_LOCAL_CACHE=true`.
+
+### Variável de Ambiente: `USE_LOCAL_CACHE`
+Sempre que `USE_LOCAL_CACHE=true` (ex: no `docker-compose.yml`), a camada utilitária (`utils.py`) aciona uma rota de contingência que baixa ativamente cada aquisição para um diretório cache local em `/tmp/skyflora_cache`. A partir daí, o GDAL abre um arquivo local puro que prescinde de restrições de kernel. Essa estratégia não será aplicada para rodar o histórico completo na nuvem, sendo ativada estritamente para homologações curtas.
+
+## 5. Como Executar
+
+Garanta que seu ambiente virtual Python esteja ativado e todas as dependências estejam instaladas (conforme definido no setup da Fase 2), ou prefira utilizar o `docker-compose`.
 
 Navegue pelo seu terminal até a pasta do projeto:
 ```bash
