@@ -1,6 +1,7 @@
 import geobr
 import geopandas as gpd
 import pandas as pd
+import os
 
 def baixar_malha_municipal(ano: int = 2020) -> gpd.GeoDataFrame:
     """
@@ -80,5 +81,11 @@ if __name__ == "__main__":
     gdf_4326 = padronizar_crs(gdf_bruto)
     gdf_coord = calcular_coordenadas_ancora(gdf_4326)
     df_final = preparar_tabela_dimensao(gdf_coord)
-    salvar_dimensao(df_final, "dim_localidade.parquet")
+    
+    BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    DATA_DIR = os.path.join(BASE_DIR, "data")
+    os.makedirs(DATA_DIR, exist_ok=True)
+    caminho_parquet = os.path.join(DATA_DIR, "dim_localidade.parquet")
+    
+    salvar_dimensao(df_final, caminho_parquet)
     print("Fase 1 concluída. O arquivo dim_localidade.parquet está pronto para a Fase 2.")

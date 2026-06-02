@@ -16,4 +16,5 @@ RUN pip install --no-cache-dir -r requirements.txt
 COPY . .
 
 # Comando padrão
-CMD ["python", "main.py"]
+ENV PYTHONPATH=/app/src
+CMD ["python", "src/pipeline/main.py"]

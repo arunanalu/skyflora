@@ -24,8 +24,9 @@ from pipeline.orquestrador import executar_extracao_completa
 
 def main():
     # 1. Carregar as coordenadas geográficas criadas na Fase 1
-    # Apontando para o dim_localidade.parquet na raiz do projeto (funciona no Docker)
-    caminho_parquet = "dim_localidade.parquet"
+    # Apontando para o dim_localidade.parquet na pasta data do projeto
+    BASE_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+    caminho_parquet = os.path.join(BASE_DIR, "data", "dim_localidade.parquet")
     
     if not os.path.exists(caminho_parquet):
         print(f"Erro: O arquivo {caminho_parquet} não foi encontrado.")
