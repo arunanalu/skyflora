@@ -1,0 +1,13 @@
+pystac-client==0.8.*
+rasterio
+numpy
+pandas
+geopandas
+shapely
+wtss==0.7.1
+netCDF4
+xarray
+fsspec
+h5netcdf
+scipy
+pyarrow
