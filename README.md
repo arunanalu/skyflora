@@ -1,47 +1,29 @@
-# Skyflora - Documentação de Execução Local
+# Skyflora
 
-Este documento descreve a utilidade e a forma de uso do script `main.py`, que atua como o ponto de entrada (entry point) para testes locais do pipeline de extração de dados ambientais do projeto Skyflora.
+Skyflora é um projeto de engenharia de dados focado na extração, ingestão e modelagem de dados de sensoriamento remoto e indicadores ambientais para a criação de uma base analítica consolidada. O objetivo do projeto é utilizar dados do **Brazil Data Cube** (APIs STAC e WTSS) e do satélite **GOES** para monitorar índices vitais como calor, desmatamento, umidade, temperatura e poluição, cruzando-os de forma inteligente com a malha municipal do Brasil.
 
-## 1. O que é o `main.py`?
+## Visão Geral da Arquitetura
 
-O arquivo **`main.py`** é um script de demonstração e validação local (Mock) focado em executar a arquitetura construída na **Fase 2**. Diferente da implantação final na nuvem (que usará Databricks e PySpark processando de forma distribuída para todo o Brasil), o `main.py` foi desenhado para ser executado diretamente no seu terminal ou IDE.
+O projeto é desenvolvido em **Python 3.9+**, utilizando bibliotecas geoespaciais (`geopandas`, `rasterio`) e focado no processamento distribuído com **Apache Spark (PySpark)** dentro do ambiente **Databricks**. O armazenamento segue o padrão **Medallion** (Bronze -> Silver -> Gold) no Delta Lake.
 
-## 2. Qual a sua Utilidade?
+O ciclo de vida dos dados está estruturado nas seguintes fases:
 
-A sua utilidade se baseia em três pilares principais essenciais para a engenharia e ciência de dados do projeto:
+1. **Fase 1: Preparação Geoespacial (Setup):** Extração das malhas municipais brasileiras (via `geobr`), calculando centroides e caixas delimitadoras (bounding boxes). Isso gera a fronteira geográfica rígida (`dim_localidade.parquet`) que âncora a busca das imagens de satélite.
+2. **Fase 2: Motores de Ingestão (Extratores):** Módulos construídos para consumir as APIs do INPE iterando sobre as coordenadas geradas na Fase 1:
+   - **Vegetação (NDVI):** Consumo da API WTSS para capturar séries temporais.
+   - **Calor e Temperatura:** Consumo do catálogo STAC (GOES-16 e SAMeT) para detecção de anomalias térmicas e temperatura média de superfície.
+   - **Umidade:** Análise da banda de vapor d'água do GOES-16 via STAC.
+3. **Fase 3: Orquestração no Databricks (Camada Bronze):** Execução do pipeline em massa para carga histórica e diária dos dados.
+4. **Fase 4: Harmonização (Camadas Silver e Gold):** Limpeza, padronização temporal e junção com bases de dados externas de emissões de carbono e poluição.
+5. **Fase 5: Tabela Consolidada:** Geração da tabela relacional final (`gold_monitoramento_ambiental`) cruzando localidade, data e todos os indicadores para uso por equipes de Business Intelligence e Data Science.
 
-### A. Validação Local (Ambiente de Testes)
-Antes de subir o código para a nuvem (Fase 3), o `main.py` permite garantir que todo o pacote `pipeline` (Módulos A, B, C e Orquestrador) está sem erros de sintaxe, importações ou lógica. Atua como um ambiente isolado para homologação do código base.
+## Estrutura do Repositório
 
-### B. Verificação de Redes, Dependências e APIs
-O pipeline geoespacial depende das APIs do Brazil Data Cube (STAC e WTSS). Ao rodar o `main.py`, o desenvolvedor confirma que:
-* As bibliotecas complexas (ex: `rasterio`, `netCDF4`, `geopandas`) foram instaladas corretamente no ambiente atual e funcionam sem conflito de binários.
-* A rede/IP não está sofrendo de bloqueios de firewall que impeçam a comunicação com os endpoints abertos do INPE.
+O projeto está organizado para separar documentação, os scripts de execução e o armazenamento local de metadados:
 
-### C. Compreensão Prática de Dados
-Para cientistas de dados que irão manipular esses indicadores para gerar a "Tabela Ouro" (Fase 4), o script apresenta como interagir com o orquestrador. Ele exibe em tela (via `print`) a "cabeça" (`.head()`) dos DataFrames retornados. Isso revela com clareza a estrutura física final dos dados (tipos numéricos, nomes exatos de colunas e organização de datas), o que serve de "contrato vivo" de dados antes do cruzamento final.
+- `docs/plan.md`: O plano de arquitetura e desenvolvimento completo, com o contexto das decisões de negócio e técnicas tomadas para o projeto. Contém as definições do esquema e tabelas finais.
+- `src/pipeline/`: Código-fonte dos motores de ingestão e de execução.
+- `src/pipeline/README.md`: Instruções detalhadas para rodar o pipeline em modo local (ambiente de testes restrito), útil para validar dependências e homologar dados em pequenas porções antes do envio para a nuvem.
+- `data/` (se aplicável): Onde os artefatos de dados de referência (como o `dim_localidade.parquet` gerado na Fase 1) devem ser salvos.
 
-## 3. Como funciona a Execução?
-
-De forma proativa, o script está configurado com limites de segurança rígidos:
-1. **Restrição Geográfica:** Carrega a malha geográfica no arquivo `dim_localidade.parquet` e limita o escopo filtrando **apenas 2 municípios**.
-2. **Restrição Temporal:** Define um range estreito e imutável de apenas **5 dias** de extração.
-
-**Por que essas restrições?**
-Processar anos de histórico para milhares de municípios sobrecarregaria as APIs satelitais do INPE, exigiria uma quantidade massiva de memória RAM da máquina local e a execução demoraria horas ou dias. O limite garante testes com *feedback* quase imediato.
-
-## 4. Como Executar
-
-Garanta que seu ambiente virtual Python esteja ativado e todas as dependências estejam instaladas (conforme definido no setup da Fase 2).
-
-Navegue pelo seu terminal até a pasta do projeto:
-```bash
-cd /caminho/para/o/projeto/skyflora
-```
-
-Execute o arquivo:
-```bash
-python main.py
-```
-
-Você verá na tela do console, em blocos organizados, os dados diários representativos dos **Focos de Calor**, **NDVI (Vegetação)**, **Temperatura** e **Umidade** referentes ao intervalo de teste.
+Para a documentação completa de como a arquitetura em nuvem é estruturada e o detalhamento dos dados de entrada, consulte `docs/plan.md`. Para testar a extração localmente, consulte o README de execução local localizado dentro da pasta de código-fonte em `src/pipeline/README.md`.
