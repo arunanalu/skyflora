@@ -1,0 +1,18 @@
+version: '3.8'
+
+services:
+  skyflora-pipeline:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: skyflora-pipeline-runner
+    # Montamos os volumes para que as alterações no código e nos dados
+    # reflitam imediatamente no container sem necessidade de rebuild.
+    volumes:
+      - ./src:/app/src
+      - ./data:/app/data
+    environment:
+      - PYTHONPATH=/app/src
+    # Esse container vai executar o comando padrão do Dockerfile:
+    # ["python", "src/pipeline/main.py"]
+    # E então será encerrado.
