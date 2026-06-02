@@ -64,6 +64,12 @@ def read(uri: str, bbox: tuple, masked: bool = True, crs: str = None, subdataset
         data = dataset.read(1, window=window, masked=masked)
         if masked and np.ma.is_masked(data):
             data = data.filled(np.nan)
+            
+        scale = dataset.scales[0] if dataset.scales else 1.0
+        offset = dataset.offsets[0] if dataset.offsets else 0.0
+        if scale != 1.0 or offset != 0.0:
+            data = data * scale + offset
+            
         return data
 
 def remap(
@@ -105,6 +111,12 @@ def remap(
             dst_nodata=np.nan,
             resampling=resampling,
         )
+        
+        scale = dataset.scales[0] if dataset.scales else 1.0
+        offset = dataset.offsets[0] if dataset.offsets else 0.0
+        if scale != 1.0 or offset != 0.0:
+            destination = destination * scale + offset
+            
     return destination[0]
 
 def get_stac_client() -> pystac_client.Client:

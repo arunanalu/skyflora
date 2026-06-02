@@ -213,8 +213,7 @@ def extrair_lst_modis(bbox, cod_ibge, start_date, end_date):
     for item in items:
         dt = pd.to_datetime(item.properties["datetime"]).date()
         try:
-            lst_raw = read(item.assets["LST_Day_1km"].href, bbox=bbox)
-            lst_kelvin = lst_raw * 0.02         # Fator de escala MODIS
+            lst_kelvin = read(item.assets["LST_Day_1km"].href, bbox=bbox)
             lst_celsius = lst_kelvin - 273.15   # Kelvin → Celsius
             mean_temp = float(np.nanmean(lst_celsius))
             records.append({
