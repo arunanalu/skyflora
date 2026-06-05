@@ -11,3 +11,4 @@ fsspec
 h5netcdf
 scipy
 pyarrow
+tqdm

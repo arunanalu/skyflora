@@ -40,15 +40,15 @@ def main():
     df['geometry'] = df['geometria_wkt'].apply(wkt.loads)
     gdf = gpd.GeoDataFrame(df, geometry='geometry', crs="EPSG:4326")
     
-    # DICA: Vamos pegar apenas o 1º município para teste.
+    # DICA: Vamos pegar apenas o município de Corumbá para teste.
     # Processar o Brasil todo demoraria dias/horas nesta execução local.
-    gdf_teste = gdf.head(1) 
+    gdf_teste = gdf[gdf['nome_municipio'] == 'Corumbá']
     
     # 2. Definir o range de datas! 
     # Sim, é obrigatório para as APIs (WTSS/STAC) saberem qual período extrair.
-    # Vamos usar um período curto (1 dia) para acelerar o processo local.
-    data_inicio = "2023-08-01"
-    data_fim = "2023-08-01"
+    # Vamos usar um período de 16 dias para garantir que pegaremos a passagem do Sentinel-2 (NDVI).
+    data_inicio = "2026-01-08"
+    data_fim = "2026-01-24"
 
     print(f"Iniciando extração para {len(gdf_teste)} município(s) entre {data_inicio} e {data_fim}...")
     

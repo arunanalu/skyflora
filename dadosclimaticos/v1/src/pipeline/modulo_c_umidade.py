@@ -66,6 +66,9 @@ def extrair_umidade_municipio(
         - cod_ibge (int)
         - umidade_atmosferica (float, escala 0-100)
     """
+    if collection == "GOES16-L2-CMI-1" and start_date >= "2025-04-01":
+        collection = "GOES19-L2-CMI-1"
+
     client = get_stac_client()
 
     item_search = client.search(
@@ -88,18 +91,36 @@ def extrair_umidade_municipio(
             if abs(dt.hour - target_hour_utc) < abs(existing_dt.hour - target_hour_utc):
                 daily_items[day] = item
 
+    import concurrent.futures
+    from tqdm import tqdm
+    from pipeline.utils import clear_local_cache, _get_local_path
+
     records = []
-    for day, item in daily_items.items():
-        try:
-            wv_image = remap(item.assets[band].href, bbox, resolution=0.02)
-            indice = calcular_indice_umidade(wv_image)
-            records.append({
-                "data_referencia": day,
-                "cod_ibge": cod_ibge,
-                "umidade_atmosferica": indice,
-            })
-        except Exception as e:
-            logging.warning(f"Erro ao ler vapor d'água para {day}: {e}")
-            continue
+
+    # Producer
+    def fetch_umidade(day, item):
+        uri = item.assets[band].href
+        _get_local_path(uri)
+        return day, uri
+
+    # Consumer
+    with concurrent.futures.ThreadPoolExecutor(max_workers=5) as executor:
+        futures = {executor.submit(fetch_umidade, day, item): (day, item) for day, item in daily_items.items()}
+        for future in tqdm(concurrent.futures.as_completed(futures), total=len(daily_items), desc="Umidade", leave=False):
+            uri = None
+            try:
+                day, uri = future.result()
+                wv_image = remap(uri, bbox, resolution=0.02)
+                indice = calcular_indice_umidade(wv_image)
+                records.append({
+                    "data_referencia": day,
+                    "cod_ibge": cod_ibge,
+                    "umidade_atmosferica": indice,
+                })
+            except Exception as e:
+                logging.warning(f"Erro ao processar Umidade: {e}")
+            finally:
+                if uri:
+                    clear_local_cache(uri)
 
     return pd.DataFrame(records)

@@ -80,6 +80,9 @@ def extrair_focos_calor_municipio(
         - cod_ibge (int)
         - contagem_focos_calor (int)
     """
+    if collection == "GOES16-L2-CMI-1" and start_date >= "2025-04-01":
+        collection = "GOES19-L2-CMI-1"
+
     client = get_stac_client()
 
     # 1. Buscar itens STAC
@@ -97,28 +100,36 @@ def extrair_focos_calor_municipio(
         if 17 <= pd.to_datetime(item.properties["datetime"]).hour <= 19
     ]
 
-    # 2. Processar cada item
+    import concurrent.futures
+    from tqdm import tqdm
+    from pipeline.utils import clear_local_cache, _get_local_path
+
     daily_fires = {}
-    for item in filtered_items:
-        dt_str = item.properties["datetime"]       # ISO 8601 string
-        dt = pd.to_datetime(dt_str)
-        day = dt.date()
+    
+    # Producer: faz download isolado pela rede em paralelo
+    def fetch_foco(item):
+        uri = item.assets["B07"].href
+        _get_local_path(uri)
+        return item, uri
 
-        # Ler e reprojetar banda B07
-        try:
-            b07 = remap(item.assets["B07"].href, bbox, resolution=0.02)
-        except Exception as e:
-            import traceback
-            logging.warning(f"Erro ao ler B07 para {dt_str}: {e}")
-            logging.warning(traceback.format_exc())
-            continue
-
-        # Detectar focos
-        hot_spots, n_objects = detect_fire(b07, temperature=fire_threshold)
-        count = int(np.nansum(hot_spots))
-
-        # Acumular por dia (soma de todos os horários do dia)
-        daily_fires[day] = daily_fires.get(day, 0) + count
+    # Consumer: processa com GDAL sequencialmente à medida que os downloads terminam
+    with concurrent.futures.ThreadPoolExecutor(max_workers=5) as executor:
+        futures = {executor.submit(fetch_foco, item): item for item in filtered_items}
+        for future in tqdm(concurrent.futures.as_completed(futures), total=len(filtered_items), desc="Focos Calor", leave=False):
+            uri = None
+            try:
+                item, uri = future.result()
+                dt = pd.to_datetime(item.properties["datetime"])
+                day = dt.date()
+                b07 = remap(uri, bbox, resolution=0.02)
+                hot_spots, n_objects = detect_fire(b07, temperature=fire_threshold)
+                count = int(np.nansum(hot_spots))
+                daily_fires[day] = daily_fires.get(day, 0) + count
+            except Exception as e:
+                logging.warning(f"Erro ao processar Focos: {e}")
+            finally:
+                if uri:
+                    clear_local_cache(uri)
 
     # 3. Montar DataFrame
     df = pd.DataFrame(
@@ -175,27 +186,46 @@ def extrair_temperatura_municipio(
     )
     items = list(item_search.items())
 
+    import concurrent.futures
+    from tqdm import tqdm
+    from pipeline.utils import clear_local_cache, _get_local_path
+
     records = []
-    for item in items:
-        dt = pd.to_datetime(item.properties["datetime"]).date()
-        try:
-            tmax_array = read(item.assets[asset_tmax].href, bbox=bbox, subdataset=asset_tmax)
-            tmin_array = read(item.assets[asset_tmin].href, bbox=bbox, subdataset=asset_tmin)
-            # SAMeT já entrega °C; calcular média espacial de (tmax+tmin)/2
-            tmean_array = (tmax_array + tmin_array) / 2.0
-            mean_temp = float(np.nanmean(tmean_array))
-            max_temp = float(np.nanmean(tmax_array))
-            min_temp = float(np.nanmean(tmin_array))
-            records.append({
-                "data_referencia": dt,
-                "cod_ibge": cod_ibge,
-                "temperatura_superficie": round(mean_temp, 2),
-                "temperatura_maxima": round(max_temp, 2),
-                "temperatura_minima": round(min_temp, 2),
-            })
-        except Exception as e:
-            logging.warning(f"Erro ao ler SAMeT para {dt}: {e}")
-            continue
+
+    def fetch_samet(item):
+        uri_tmax = item.assets[asset_tmax].href
+        uri_tmin = item.assets[asset_tmin].href
+        _get_local_path(uri_tmax)
+        _get_local_path(uri_tmin)
+        return item, uri_tmax, uri_tmin
+
+    with concurrent.futures.ThreadPoolExecutor(max_workers=5) as executor:
+        futures = {executor.submit(fetch_samet, item): item for item in items}
+        for future in tqdm(concurrent.futures.as_completed(futures), total=len(items), desc="Temperatura", leave=False):
+            uri_tmax = None
+            uri_tmin = None
+            try:
+                item, uri_tmax, uri_tmin = future.result()
+                dt = pd.to_datetime(item.properties["datetime"]).date()
+                tmax_array = read(uri_tmax, bbox=bbox, subdataset=asset_tmax)
+                tmin_array = read(uri_tmin, bbox=bbox, subdataset=asset_tmin)
+                tmean_array = (tmax_array + tmin_array) / 2.0
+                mean_temp = float(np.nanmean(tmean_array))
+                max_temp = float(np.nanmean(tmax_array))
+                min_temp = float(np.nanmean(tmin_array))
+                records.append({
+                    "data_referencia": dt,
+                    "cod_ibge": cod_ibge,
+                    "temperatura_superficie": round(mean_temp, 2),
+                    "temperatura_maxima": round(max_temp, 2),
+                    "temperatura_minima": round(min_temp, 2),
+                })
+            except Exception as e:
+                logging.warning(f"Erro ao processar Temperatura: {e}")
+            finally:
+                if uri_tmax:
+                    clear_local_cache(uri_tmax)
+                    clear_local_cache(uri_tmin)
 
     return pd.DataFrame(records)
 

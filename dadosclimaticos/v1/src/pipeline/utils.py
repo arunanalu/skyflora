@@ -30,10 +30,23 @@ def _get_local_path(uri: str) -> str:
     local_path = os.path.join(cache_dir, filename)
     
     if not os.path.exists(local_path):
-        #print(f"INFO: Baixando {uri} para {local_path}...")
+        print(f"INFO: Baixando imagem (Cache Local): {filename} ...")
         urllib.request.urlretrieve(uri, local_path)
         
     return local_path
+
+def clear_local_cache(uri: str):
+    """Deleta o arquivo do cache local se existir."""
+    if not uri.startswith("http"):
+        return
+    cache_dir = "/tmp/skyflora_cache"
+    filename = uri.split("/")[-1]
+    local_path = os.path.join(cache_dir, filename)
+    if os.path.exists(local_path):
+        try:
+            os.remove(local_path)
+        except:
+            pass
 
 def read(uri: str, bbox: tuple, masked: bool = True, crs: str = None, subdataset: str = None) -> np.ma.MaskedArray:
     """

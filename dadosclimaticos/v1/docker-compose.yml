@@ -16,5 +16,6 @@ services:
     environment:
       - PYTHONPATH=/app/src
       - USE_LOCAL_CACHE=true
+      - PYTHONUNBUFFERED=1
     # Comando explícito para executar o pipeline
     command: ["python", "src/pipeline/main.py"]

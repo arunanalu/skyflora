@@ -2,6 +2,8 @@ import pandas as pd
 import geopandas as gpd
 import logging
 import time
+import concurrent.futures
+from tqdm import tqdm
 
 from pipeline.modulo_a_vegetacao import extrair_ndvi_municipio
 from pipeline.modulo_b_temperatura import extrair_focos_calor_municipio, extrair_temperatura_municipio
@@ -34,14 +36,13 @@ def executar_extracao_completa(
     all_temp = []
     all_umidade = []
 
-    for _, row in municipios_gdf.iterrows():
+    for _, row in tqdm(municipios_gdf.iterrows(), total=len(municipios_gdf), desc="Processando Municípios"):
         cod_ibge = row["cod_ibge"]
         centroid = row.geometry.centroid
         bbox = tuple(row.geometry.bounds)  # (minx, miny, maxx, maxy)
 
         logging.info(f"Processando município {cod_ibge} - {row.get('nome_municipio', '')}")
 
-        # Módulo A: NDVI
         try:
             df_ndvi = extrair_ndvi_municipio(
                 latitude=centroid.y,
@@ -54,7 +55,6 @@ def executar_extracao_completa(
         except Exception as e:
             logging.error(f"Módulo A falhou para {cod_ibge}: {e}")
 
-        # Módulo B: Focos de Calor
         try:
             df_focos = extrair_focos_calor_municipio(
                 bbox=bbox,
@@ -66,7 +66,6 @@ def executar_extracao_completa(
         except Exception as e:
             logging.error(f"Módulo B (focos) falhou para {cod_ibge}: {e}")
 
-        # Módulo B: Temperatura SAMeT
         try:
             df_temp = extrair_temperatura_municipio(
                 bbox=bbox,
@@ -78,7 +77,6 @@ def executar_extracao_completa(
         except Exception as e:
             logging.error(f"Módulo B (temp) falhou para {cod_ibge}: {e}")
 
-        # Módulo C: Umidade
         try:
             df_umidade = extrair_umidade_municipio(
                 bbox=bbox,
@@ -90,7 +88,7 @@ def executar_extracao_completa(
         except Exception as e:
             logging.error(f"Módulo C falhou para {cod_ibge}: {e}")
 
-        # Rate limiting entre municípios
+        # Rate limiting preventivo entre municípios
         time.sleep(1.0)
 
     return {
