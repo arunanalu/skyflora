@@ -69,13 +69,9 @@ def run_batch_extraction(start_date: str, end_date: str):
         ndvi_dfs = []
         
         def _fetch_ndvi(row_data):
-            try:
-                df = fetch_vegetation_cover(row_data['centroid_lat'], row_data['centroid_lon'], start_date, end_date)
-                df['cod_ibge'] = row_data['cod_ibge']
-                return df
-            except Exception as e:
-                print(f"Erro NDVI {row_data['cod_ibge']}: {e}")
-                return pd.DataFrame()
+            df = fetch_vegetation_cover(row_data['centroid_lat'], row_data['centroid_lon'], start_date, end_date)
+            df['cod_ibge'] = row_data['cod_ibge']
+            return df
                 
         with concurrent.futures.ThreadPoolExecutor(max_workers=5) as executor:
             futures = [executor.submit(_fetch_ndvi, row) for _, row in chunk.iterrows()]
@@ -87,16 +83,19 @@ def run_batch_extraction(start_date: str, end_date: str):
         df_ndvi_chunk = pd.concat(ndvi_dfs, ignore_index=True) if ndvi_dfs else pd.DataFrame()
         
         if df_weather.empty:
-            print(f"Aviso: Dados de clima vazios para o bloco {idx+1}. Pulando.")
-            continue
+            raise Exception(f"Erro Crítico: Dados de clima vazios para o bloco {idx+1}. Abortando.")
             
         df_chunk = df_weather.copy()
         
         if not df_aq.empty:
             df_chunk = df_chunk.merge(df_aq, on=['time', 'latitude', 'longitude'], how='left')
+        else:
+            raise Exception(f"Erro Crítico: Dados de qualidade do ar vazios para o bloco {idx+1}. Abortando.")
             
         if not df_veg.empty:
             df_chunk = df_chunk.merge(df_veg, on=['time', 'latitude', 'longitude'], how='left')
+        else:
+            raise Exception(f"Erro Crítico: Dados de vegetação do Open-Meteo vazios para o bloco {idx+1}. Abortando.")
             
         df_chunk = df_chunk.merge(chunk, left_on=['latitude', 'longitude'], right_on=['centroid_lat', 'centroid_lon'], how='left')
         

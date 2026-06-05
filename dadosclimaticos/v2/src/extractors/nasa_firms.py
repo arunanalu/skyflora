@@ -68,18 +68,16 @@ def fetch_fire_spots_brazil(start_date: str, end_date: str):
         
         url = f"https://firms.modaps.eosdis.nasa.gov/api/area/csv/{api_key}/{source}/{bbox}/{chunk_days}/{date_str}"
         
-        try:
-            response = safe_get(url)
-            if response.status_code == 200:
-                df = pd.read_csv(io.StringIO(response.text))
-                dfs.append(df)
-            else:
-                print(f"Erro na API NASA FIRMS (Area): HTTP {response.status_code} - {response.text[:100]}")
-        except Exception as e:
-            print(f"Erro na API NASA FIRMS (Area): {e}")
+        response = safe_get(url)
+        if response.status_code == 200:
+            df = pd.read_csv(io.StringIO(response.text))
+            dfs.append(df)
+        else:
+            raise Exception(f"Erro Crítico na API NASA FIRMS (Area): HTTP {response.status_code} - {response.text[:100]}")
             
         current += timedelta(days=chunk_days)
         
     if dfs:
         return pd.concat(dfs, ignore_index=True)
-    return pd.DataFrame()
+    
+    raise Exception("A API NASA FIRMS não retornou dados para o período solicitado. Abortando para evitar buracos nos dados.")
