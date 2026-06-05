@@ -20,13 +20,13 @@ def fetch_fire_spots(lat: float, lon: float, date: str):
                 df = pd.read_csv(io.StringIO(response.text))
                 focos = len(df)
                 return pd.DataFrame([{'time': date, 'focos_queimadas_reais': focos}])
-            return pd.DataFrame([{'time': date, 'focos_queimadas_reais': 0}])
+            return pd.DataFrame([{'time': date, 'focos_queimadas_reais': None}])
         except Exception as e:
             print(f"Erro na API NASA FIRMS: {e}")
-            return pd.DataFrame()
+            return pd.DataFrame([{'time': date, 'focos_queimadas_reais': None}])
     else:
-        print("Aviso: Variável FIRMS_API_KEY não definida. Usando dados estáticos de queimadas de fallback.")
-        return pd.DataFrame([{'time': date, 'focos_queimadas_fallback': 0}])
+        print("Aviso: Variável FIRMS_API_KEY não definida. Retornando valores nulos para queimadas.")
+        return pd.DataFrame([{'time': date, 'focos_queimadas_reais': None}])
 
 def fetch_fire_spots_brazil(start_date: str, end_date: str):
     """

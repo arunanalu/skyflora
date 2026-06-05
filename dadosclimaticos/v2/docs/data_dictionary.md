@@ -33,8 +33,10 @@ Variáveis que medem o quanto a vegetação daquele município está perdendo á
 | :--- | :--- | :--- | :--- |
 | `et0_fao_evapotranspiration` | **perda_agua_solo_vegetacao** | Float | Evapotranspiração de referência (em Milímetros). Mede o volume de água perdido do solo e da transpiração da cobertura vegetal. |
 | `vapour_pressure_deficit_max` | **estresse_hidrico_vegetacao** | Float | Máximo Déficit de Pressão de Vapor (em kPa). Mede "quão seco" está o ar. Quanto maior este valor, mais os poros (estômatos) das plantas se fecham para evitar perda de água, entrando em forte estresse hídrico. |
+| `ndvi_mean` | **indice_cobertura_vegetal** | Float | Índice de Vigor da Cobertura Vegetal. Mede a densidade e o vigor da folhagem, sendo crucial para acompanhar a degradação, secas e desmatamento ao longo dos dias. |
+| `cloud_cover_percent` | **percentual_nuvens** | Float | Percentual de nuvens presentes na região no dia da medição. Dias com 100% de cobertura de nuvens geralmente inviabilizam a captação óptica da vegetação pelo satélite, gerando valores nulos para o índice vegetal. |
 
 ## Ocorrência de Fogo
 | Coluna original | Nome Consolidado | Tipo | Descrição e Interpretação |
 | :--- | :--- | :--- | :--- |
-| `focos_queimadas_reais` | **focos_queimadas_nasa** | Inteiro | Número de focos ativos de calor (incêndios) detectados por satélites no perímetro geográfico (Bounding Box) do município durante as 24 horas. |
+| `focos_queimadas_reais` | **focos_queimadas_nasa** | Inteiro | Número de focos ativos de calor (incêndios) detectados por satélites no perímetro geográfico (Bounding Box) do município durante as 24 horas. Se a API falhar ou não estiver configurada, o valor será nulo (Vazio/NaN). |
