@@ -59,13 +59,13 @@ def run_pipeline(municipio: str, date: str):
         'temperature_2m_min': 'temperatura_minima_c',
         'temperature_2m_mean': 'temperatura_media_c',
         'precipitation_sum': 'precipitacao_total_mm',
-        'pm10': 'poluicao_pm10_ug_m3',
-        'pm2_5': 'poluicao_pm2_5_ug_m3',
-        'carbon_monoxide': 'monoxido_carbono_ug_m3',
+        'pm10': 'poluicao_particulas_inalaveis',
+        'pm2_5': 'poluicao_particulas_finas',
+        'carbon_monoxide': 'poluicao_monoxido_carbono',
         'focos_queimadas_reais': 'focos_queimadas_nasa',
         'focos_queimadas_fallback': 'focos_queimadas_mock',
-        'et0_fao_evapotranspiration': 'evapotranspiracao_mm',
-        'vapour_pressure_deficit_max': 'deficit_pressao_vapor_max_kpa'
+        'et0_fao_evapotranspiration': 'perda_agua_solo_vegetacao',
+        'vapour_pressure_deficit_max': 'estresse_hidrico_vegetacao'
     }
     
     df_final.rename(columns=colunas_descritivas, inplace=True)
