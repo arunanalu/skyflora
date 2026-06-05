@@ -57,7 +57,7 @@ def run_batch_extraction(start_date: str, end_date: str):
         
         def _fetch_ndvi(row_data):
             try:
-                time.sleep(0.5)  # Respeita o Rate Limit do CDSE (Copernicus)
+                time.sleep(1.0)  # Respeita o Rate Limit do CDSE (Copernicus)
                 df = fetch_vegetation_cover(row_data['centroid_lat'], row_data['centroid_lon'], start_date, end_date)
                 df['cod_ibge'] = row_data['cod_ibge']
                 return df
@@ -65,7 +65,7 @@ def run_batch_extraction(start_date: str, end_date: str):
                 print(f"Erro NDVI {row_data['cod_ibge']}: {e}")
                 return pd.DataFrame()
                 
-        with concurrent.futures.ThreadPoolExecutor(max_workers=2) as executor:
+        with concurrent.futures.ThreadPoolExecutor(max_workers=1) as executor:
             futures = [executor.submit(_fetch_ndvi, row) for _, row in chunk.iterrows()]
             for future in concurrent.futures.as_completed(futures):
                 res_df = future.result()
