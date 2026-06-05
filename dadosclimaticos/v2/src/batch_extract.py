@@ -30,17 +30,30 @@ def run_batch_extraction(start_date: str, end_date: str):
         df_fires_br['acq_date'] = pd.to_datetime(df_fires_br['acq_date']).dt.date.astype(str)
         df_fires_br.rename(columns={'latitude': 'fire_lat', 'longitude': 'fire_lon'}, inplace=True)
     
-    chunk_size = 100
-    total_mun = len(df_dim)
-    chunks = [df_dim[i:i+chunk_size] for i in range(0, total_mun, chunk_size)]
-    
     final_output_path = BRONZE_DIR / f"bronze_br_completo_{start_date.replace('-','')}_{end_date.replace('-','')}.csv"
     checkpoint_path = BRONZE_DIR / f"checkpoint_bronze_br.csv"
     
+    processed_ibges = set()
     if checkpoint_path.exists():
-        os.remove(checkpoint_path)
+        print("Checkpoint encontrado! Lendo municípios já processados...")
+        try:
+            df_ckpt = pd.read_csv(checkpoint_path, usecols=['cod_ibge'])
+            processed_ibges = set(df_ckpt['cod_ibge'].unique())
+        except Exception as e:
+            print(f"Erro ao ler checkpoint (pode estar vazio): {e}")
+            
+    df_dim = df_dim[~df_dim['cod_ibge'].isin(processed_ibges)]
+    
+    total_mun = len(df_dim)
+    if total_mun == 0:
+        print("Todos os municípios já foram processados!")
+        os.rename(checkpoint_path, final_output_path)
+        return
         
-    print(f"Iniciando extração em lote para {total_mun} municípios em {len(chunks)} blocos.")
+    chunk_size = 100
+    chunks = [df_dim[i:i+chunk_size] for i in range(0, total_mun, chunk_size)]
+        
+    print(f"Iniciando/Continuando extração para os {total_mun} municípios restantes em {len(chunks)} blocos.")
     
     for idx, chunk in enumerate(chunks):
         print(f"Processando bloco {idx+1}/{len(chunks)}...")
