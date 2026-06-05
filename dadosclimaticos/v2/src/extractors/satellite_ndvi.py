@@ -133,13 +133,17 @@ def fetch_vegetation_cover(lat: float, lon: float, start_date: str, end_date: st
             time_str = item["interval"]["from"][:10]
             try:
                 mean_ndvi = item["outputs"]["ndvi"]["bands"]["B0"]["stats"]["mean"]
+                if isinstance(mean_ndvi, list):
+                    mean_ndvi = mean_ndvi[0] if mean_ndvi else None
             except KeyError:
                 mean_ndvi = None
                 
             try:
                 mean_cloud = item["outputs"]["cloud"]["bands"]["B0"]["stats"]["mean"]
-                cloud_percent = mean_cloud * 100.0 if mean_cloud is not None else None
-            except KeyError:
+                if isinstance(mean_cloud, list):
+                    mean_cloud = mean_cloud[0] if mean_cloud else None
+                cloud_percent = float(mean_cloud) * 100.0 if mean_cloud is not None else None
+            except (KeyError, ValueError, TypeError):
                 cloud_percent = None
                 
             records.append({
