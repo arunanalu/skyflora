@@ -2,6 +2,7 @@ import argparse
 import pandas as pd
 import os
 import sys
+import time
 from pathlib import Path
 
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
