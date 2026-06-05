@@ -11,6 +11,8 @@ from src.extractors.open_meteo import fetch_weather
 from src.extractors.open_meteo_aq import fetch_air_quality
 from src.extractors.nasa_firms import fetch_fire_spots_brazil
 from src.extractors.open_meteo_veg import fetch_vegetation_health
+from src.extractors.satellite_ndvi import fetch_vegetation_cover
+import concurrent.futures
 
 def run_batch_extraction(start_date: str, end_date: str):
     dim_path = DATA_DIR / 'dim' / 'dim_localidade.parquet'
@@ -48,6 +50,28 @@ def run_batch_extraction(start_date: str, end_date: str):
         df_aq = fetch_air_quality(lats, lons, start_date, end_date)
         df_veg = fetch_vegetation_health(lats, lons, start_date, end_date)
         
+        # Extração de NDVI em Paralelo para o chunk atual
+        print(f"Baixando NDVI (Sentinel-2) em paralelo para {len(lats)} municípios...")
+        ndvi_dfs = []
+        
+        def _fetch_ndvi(row_data):
+            try:
+                df = fetch_vegetation_cover(row_data['centroid_lat'], row_data['centroid_lon'], start_date, end_date)
+                df['cod_ibge'] = row_data['cod_ibge']
+                return df
+            except Exception as e:
+                print(f"Erro NDVI {row_data['cod_ibge']}: {e}")
+                return pd.DataFrame()
+                
+        with concurrent.futures.ThreadPoolExecutor(max_workers=10) as executor:
+            futures = [executor.submit(_fetch_ndvi, row) for _, row in chunk.iterrows()]
+            for future in concurrent.futures.as_completed(futures):
+                res_df = future.result()
+                if not res_df.empty:
+                    ndvi_dfs.append(res_df)
+                    
+        df_ndvi_chunk = pd.concat(ndvi_dfs, ignore_index=True) if ndvi_dfs else pd.DataFrame()
+        
         if df_weather.empty:
             print(f"Aviso: Dados de clima vazios para o bloco {idx+1}. Pulando.")
             continue
@@ -61,6 +85,9 @@ def run_batch_extraction(start_date: str, end_date: str):
             df_chunk = df_chunk.merge(df_veg, on=['time', 'latitude', 'longitude'], how='left')
             
         df_chunk = df_chunk.merge(chunk, left_on=['latitude', 'longitude'], right_on=['centroid_lat', 'centroid_lon'], how='left')
+        
+        if not df_ndvi_chunk.empty:
+            df_chunk = df_chunk.merge(df_ndvi_chunk, left_on=['time', 'cod_ibge'], right_on=['time', 'cod_ibge'], how='left')
         
         fire_records = []
         dates = df_chunk['time'].unique()
@@ -107,7 +134,9 @@ def run_batch_extraction(start_date: str, end_date: str):
             'carbon_monoxide': 'poluicao_monoxido_carbono',
             'focos_queimadas_reais': 'focos_queimadas_nasa',
             'et0_fao_evapotranspiration': 'perda_agua_solo_vegetacao',
-            'vapour_pressure_deficit_max': 'estresse_hidrico_vegetacao'
+            'vapour_pressure_deficit_max': 'estresse_hidrico_vegetacao',
+            'ndvi_mean': 'indice_cobertura_vegetal',
+            'cloud_cover_percent': 'percentual_nuvens'
         }
         df_chunk.rename(columns=colunas_descritivas, inplace=True)
         
