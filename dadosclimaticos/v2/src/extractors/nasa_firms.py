@@ -36,7 +36,10 @@ def fetch_fire_spots(lat: float, lon: float, date: str):
 
 def fetch_fire_spots_brazil(start_date: str, end_date: str):
     """
-    Extrai todos os focos de incêndio do Brasil num intervalo de datas, agrupados em blocos de 10 dias.
+    Extrai todos os focos de incêndio do Brasil num intervalo de datas.
+    Usa a API de Area ao invés de Country, pois a API de Country não suporta dados de arquivo/antigos (SP).
+    O Brasil está delimitado pela bbox aproximada: -74,-34,-34,5.
+    A API de Area suporta apenas intervalos de 1 a 5 dias.
     """
     api_key = os.environ.get("FIRMS_API_KEY")
     if not api_key:
@@ -49,9 +52,13 @@ def fetch_fire_spots_brazil(start_date: str, end_date: str):
     current = start
     dfs = []
     
+    # Bbox cobrindo o Brasil inteiro: Oeste, Sul, Leste, Norte
+    bbox = "-74,-34,-34,5"
+    
     while current <= end:
         days_left = (end - current).days + 1
-        chunk_days = min(days_left, 10)
+        # A API de AREA aceita NO MÁXIMO 5 dias
+        chunk_days = min(days_left, 5)
         
         date_str = current.strftime("%Y-%m-%d")
         
@@ -59,15 +66,17 @@ def fetch_fire_spots_brazil(start_date: str, end_date: str):
         days_diff = (datetime.now() - current).days
         source = "VIIRS_SNPP_NRT" if days_diff <= 60 else "VIIRS_SNPP_SP"
         
-        url = f"https://firms.modaps.eosdis.nasa.gov/api/country/csv/{api_key}/{source}/BRA/{chunk_days}/{date_str}"
+        url = f"https://firms.modaps.eosdis.nasa.gov/api/area/csv/{api_key}/{source}/{bbox}/{chunk_days}/{date_str}"
         
         try:
             response = safe_get(url)
             if response.status_code == 200:
                 df = pd.read_csv(io.StringIO(response.text))
                 dfs.append(df)
+            else:
+                print(f"Erro na API NASA FIRMS (Area): HTTP {response.status_code} - {response.text[:100]}")
         except Exception as e:
-            print(f"Erro na API NASA FIRMS (Country): {e}")
+            print(f"Erro na API NASA FIRMS (Area): {e}")
             
         current += timedelta(days=chunk_days)
         
