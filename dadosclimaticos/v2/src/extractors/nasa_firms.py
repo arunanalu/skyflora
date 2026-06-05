@@ -13,7 +13,13 @@ def fetch_fire_spots(lat: float, lon: float, date: str):
     
     if api_key:
         bbox = f"{lon-0.2},{lat-0.2},{lon+0.2},{lat+0.2}"
-        url = f"https://firms.modaps.eosdis.nasa.gov/api/area/csv/{api_key}/VIIRS_SNPP_NRT/{bbox}/1/{date}"
+        
+        # Dinâmica de Fonte de Dados (NRT vs SP)
+        target_date = datetime.strptime(date, "%Y-%m-%d")
+        days_diff = (datetime.now() - target_date).days
+        source = "VIIRS_SNPP_NRT" if days_diff <= 60 else "VIIRS_SNPP_SP"
+        
+        url = f"https://firms.modaps.eosdis.nasa.gov/api/area/csv/{api_key}/{source}/{bbox}/1/{date}"
         try:
             response = safe_get(url)
             if response.status_code == 200:
@@ -48,7 +54,12 @@ def fetch_fire_spots_brazil(start_date: str, end_date: str):
         chunk_days = min(days_left, 10)
         
         date_str = current.strftime("%Y-%m-%d")
-        url = f"https://firms.modaps.eosdis.nasa.gov/api/country/csv/{api_key}/VIIRS_SNPP_NRT/BRA/{chunk_days}/{date_str}"
+        
+        # Dinâmica de Fonte de Dados (NRT vs SP)
+        days_diff = (datetime.now() - current).days
+        source = "VIIRS_SNPP_NRT" if days_diff <= 60 else "VIIRS_SNPP_SP"
+        
+        url = f"https://firms.modaps.eosdis.nasa.gov/api/country/csv/{api_key}/{source}/BRA/{chunk_days}/{date_str}"
         
         try:
             response = safe_get(url)
