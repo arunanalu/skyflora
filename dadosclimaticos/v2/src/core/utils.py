@@ -6,7 +6,7 @@ import functools
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-def with_backoff(max_retries=15, base_delay=5, max_delay=600):
+def with_backoff(max_retries=100, base_delay=5, max_delay=600):
     def decorator(func):
         @functools.wraps(func)
         def wrapper(*args, **kwargs):
