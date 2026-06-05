@@ -58,7 +58,7 @@ def with_exponential_backoff(max_retries=5, base_delay=1):
         return wrapper
     return decorator
 
-@with_exponential_backoff(max_retries=3, base_delay=1)
+@with_exponential_backoff(max_retries=15, base_delay=5)
 def fetch_vegetation_cover(lat: float, lon: float, start_date: str, end_date: str = None):
     """
     Extrai a cobertura vegetal (NDVI/LAI) consumindo o Sentinel Hub API (Copernicus CDSE).
