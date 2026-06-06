@@ -43,4 +43,4 @@ Este projeto é desenvolvido com a dedicação dos seguintes colaboradores:
 
 - **[Pedro Bataglia](https://github.com/Pedro-Bataglia)**
 
-*(Se você faz parte do projeto, adicione seu nome aqui!)*
+
