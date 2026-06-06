@@ -42,5 +42,6 @@ Você é livre para reaproveitar nossa lógica de extração! Cada módulo tem s
 Este projeto é desenvolvido com a dedicação dos seguintes colaboradores:
 
 - **[Pedro Bataglia](https://github.com/Pedro-Bataglia)**
+- **[arunanalu](https://github.com/arunanalu)**
 
 
