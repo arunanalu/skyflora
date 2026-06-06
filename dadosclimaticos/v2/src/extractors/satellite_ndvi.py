@@ -26,9 +26,10 @@ def _get_cdse_token():
     else:
         raise ConnectionError(f"Falha ao obter token CDSE: {response.status_code} - {response.text}")
 
-def with_exponential_backoff(max_retries=5, base_delay=1):
+def with_exponential_backoff(max_retries=1000, base_delay=5):
     """
     Decorator para implementar Retry com Exponential Backoff.
+    Garante tentativas praticamente infinitas com teto de 5 minutos.
     """
     def decorator(func):
         def wrapper(*args, **kwargs):
@@ -37,24 +38,11 @@ def with_exponential_backoff(max_retries=5, base_delay=1):
                 try:
                     return func(*args, **kwargs)
                 except Exception as e:
-                    wait_time = base_delay * (2 ** retries)
+                    wait_time = min(base_delay * (2 ** retries), 300)
                     print(f"[NDVI API] Falha na requisição: {e}. Retentando em {wait_time}s... (Tentativa {retries + 1}/{max_retries})")
                     time.sleep(wait_time)
                     retries += 1
-            print(f"[NDVI API] Falha persistente após {max_retries} tentativas. Retornando nulos.")
-            
-            # Quando falha totalmente, garante que retorna a estrutura com dados nulos
-            # para não perder a integridade estrutural das colunas na camada Bronze
-            start_date = kwargs.get('start_date') or args[2]
-            end_date = kwargs.get('end_date') or (args[3] if len(args) > 3 else None)
-            end_date = end_date or start_date
-            
-            date_range = pd.date_range(start=start_date, end=end_date).strftime("%Y-%m-%d").tolist()
-            return pd.DataFrame({
-                'time': date_range,
-                'ndvi_mean': [None] * len(date_range),
-                'cloud_cover_percent': [None] * len(date_range)
-            })
+            raise ConnectionError("Falha persistente na API do Copernicus após infinitas tentativas. Abortando para não gerar nulos.")
         return wrapper
     return decorator
 
