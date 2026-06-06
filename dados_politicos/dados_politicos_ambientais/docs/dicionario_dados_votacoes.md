@@ -1,19 +1,21 @@
-# Dicionário de Dados: Votações Ambientais
+# Dicionário de Dados: Votações Ambientais (Camada Bronze Política)
 
-Este documento descreve a estrutura do arquivo `tabela_votacoes_ambientais.csv`, que contém os dados cruzados entre proposições legislativas relacionadas ao meio ambiente e o posicionamento (voto) de cada deputado federal.
+Este documento descreve a estrutura consolidada do arquivo `tabela_votacoes_ambientais.csv`. Ele visa dar clareza não apenas técnica sobre os tipos de dados, mas principalmente semântica, ajudando analistas e modelos (LLMs) a extraírem o máximo de inteligência no cruzamento entre política e ecologia.
 
-| Nome da Coluna | Tipo de Dado | Descrição |
+## Dados da Proposição e Voto
+
+| Nome da Coluna | Tipo de Dado | Descrição e Interpretação |
 | :--- | :--- | :--- |
-| **`Nome do Deputado`** | String | Nome parlamentar adotado pelo deputado federal. |
-| **`Partido`** | String | Sigla do partido político ao qual o parlamentar está filiado no momento do registro. |
-| **`UF`** | String | Sigla da Unidade da Federação (Estado) que o deputado representa. |
-| **`Tipo da proposição`** | String | Sigla que identifica a espécie legislativa (Ex: `PL` = Projeto de Lei, `PEC` = Proposta de Emenda à Constituição). |
-| **`Número/Ano`** | String | O número de identificação da proposição e o ano em que ela foi apresentada na Câmara. |
-| **`Ementa`** | String | Texto oficial que resume a ementa, o objetivo ou o conteúdo central do projeto de lei. |
-| **`Tema ambiental identificado`** | String | Conjunto de palavras-chave da API ou termos de busca que enquadraram a proposição na categoria de Meio Ambiente / Clima. |
-| **`Data de apresentação`** | Date (YYYY-MM-DD) | A data oficial em que o projeto de lei foi protocolado ou apresentado na casa legislativa. |
-| **`Situação atual`** | String | O status em que o projeto se encontra atualmente na sua tramitação (Ex: Arquivada, Aguardando Parecer, Pronta para Pauta). |
-| **`Resultado da votação`** | String | O veredito geral da sessão plenária sobre a proposição (Ex: Aprovada, Rejeitada, Sem votação registrada). |
-| **`Voto do deputado`** | String | O posicionamento individual do parlamentar na votação. **Atenção:** Votações nominais retornam `Sim`, `Não`, `Abstenção` ou `Obstrução`. Votações simbólicas ou pautas ainda não votadas retornam `N/A`. |
-| **`Link oficial da proposição`** | URL | Endereço web para acompanhar toda a tramitação e histórico da proposição no Portal da Câmara dos Deputados. |
-| **`Link do inteiro teor`** | URL | Endereço direto (geralmente em PDF) para a leitura do documento com o texto completo da proposta. Essencial para análises via LLM. |
+| **`Nome do Deputado`** | String | **O que é:** Nome parlamentar adotado pelo deputado federal.<br>**Como ler:** Identifica de forma pública o autor ou votante da pauta. |
+| **`Partido`** | String | **O que é:** Sigla do partido político do parlamentar no momento da extração.<br>**Por que importa:** Partidos muitas vezes adotam uma "orientação partidária", votando em bloco a favor de medidas conservacionistas ou frouxas para o meio ambiente. Permite análises clusterizadas. |
+| **`UF`** | String | **O que é:** Unidade da Federação (Estado) que o deputado representa.<br>**Como cruzar (Data Science):** Coluna chave para fazer *join* geográfico com os dados do módulo `dados_climaticos`. Permite responder perguntas como: *"Deputados de estados com os piores índices de queimadas (NASA FIRMS) tendem a votar contra ou a favor de regulações ambientais rigorosas?"* |
+| **`Tipo da proposição`** | String | **O que é:** Sigla da espécie legislativa (documento).<br>**Valores Comuns:**<br>- **`PL` (Projeto de Lei):** O mais comum, propõe a criação de uma nova lei ordinária ou alteração de uma existente.<br>- **`PEC` (Proposta de Emenda à Constituição):** Altera a Constituição Federal (maior peso jurídico).<br>- **`RIC` (Requerimento de Informação):** Deputados usam isso para obrigar Ministérios (ex: MMA) a prestar contas oficiais sobre um desastre ecológico ou pauta. |
+| **`Número/Ano`** | String | **O que é:** O código serial do documento (ex: `184/2024`). Identificador único quando atrelado ao `Tipo da proposição`. |
+| **`Ementa`** | String | **O que é:** Resumo ou descrição oficial do conteúdo da proposição.<br>**Como interpretar (Uso Avançado):** É o campo ideal para passar via API de um LLM (como Gemini) e pedir para a IA classificar automaticamente se aquele texto é `Nocivo` ou `Protetivo` ao ecossistema. |
+| **`Tema ambiental identificado`** | String | **O que é:** As palavras-chave que a API da Câmara etiquetou (ex: `"meio ambiente, clima, resíduos sólidos"`). Serve como filtro inicial de que o projeto fala de sustentabilidade. |
+| **`Data de apresentação`** | Data | **O que é:** A data (`AAAA-MM-DD`) em que o documento entrou no sistema da câmara. |
+| **`Situação atual`** | String | **O que é:** O status burocrático de tramitação.<br>**Exemplos:** `"Arquivada"`, `"Aguardando Designação de Relator"`, `"Aprovada"`. Se estiver arquivada e não virou lei, serve apenas como termômetro de intenção política. |
+| **`Resultado da votação`** | String | **O que é:** O desfecho final no plenário. |
+| **`Voto do deputado`** | String | **O que é:** O posicionamento individual e declarado do parlamentar sobre a pauta da ementa.<br>**Como interpretar os dados:**<br>- **`Sim` / `Não`:** São os votos definitivos. Extraídos de **Votações Nominais** (onde o painel eletrônico é ativado e grava cada deputado). Use estes para criar seus rankings e métricas de aderência ambiental.<br>- **`Abstenção` / `Obstrução`:** O deputado marcou presença mas preferiu se eximir (abstenção) ou usou estratégias regimentais para atrasar e barrar o andamento da sessão (obstrução).<br>- **`N/A` (Não Aplicável):** Ocorre em dois cenários críticos: (1) O PL nunca foi a plenário. (2) Ocorreu uma **Votação Simbólica** — o presidente da Câmara apenas olhou os presentes e declarou aprovado sem forçar o registro no painel eletrônico. Se a coluna estiver como `N/A`, é humanamente e sistemicamente impossível atrelar aquele voto àquele CPF específico. Filtre fora esses registros se buscar exatidão individual. |
+| **`Link oficial da proposição`** | URL | Endereço para acompanhamento da ficha da proposição no portal da Câmara. |
+| **`Link do inteiro teor`** | URL | Link (geralmente PDF ou DOC) do texto completo e extenso da lei/proposta original. Fundamental se o modelo de linguagem achar a `Ementa` muito vaga. |
