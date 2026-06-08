@@ -1,5 +1,5 @@
 'use client';
-import React, { memo, useEffect, useState } from 'react';
+import React, { memo, useEffect, useRef, useState } from 'react';
 
 
 type Coord = [number, number];
@@ -10,6 +10,15 @@ type GeoFeature = {
     type: 'Polygon' | 'MultiPolygon';
     coordinates: Ring[] | Ring[][];
   };
+};
+type MapState = {
+  uf: string;
+  d: string;
+  centroid: Coord;
+};
+export type StateAnchor = {
+  x: number;
+  y: number;
 };
 
 // Brazil bounding box — equirectangular projection
@@ -64,11 +73,12 @@ function centroid(f: GeoFeature): Coord {
 export interface BrazilMapProps {
   getStateColor: (uf: string) => string;
   selectedStateId: string | null;
-  onStateClick: (uf: string) => void;
+  onStateClick: (uf: string, anchor: StateAnchor) => void;
 }
 
 export const BrazilMap = memo(function BrazilMap({ getStateColor, selectedStateId, onStateClick }: BrazilMapProps) {
-  const [features, setFeatures] = useState<GeoFeature[]>([]);
+  const svgRef = useRef<SVGSVGElement | null>(null);
+  const [states, setStates] = useState<MapState[]>([]);
   const [loading, setLoading]   = useState(true);
   const [hovered, setHovered]   = useState<string | null>(null);
 
@@ -77,10 +87,39 @@ export const BrazilMap = memo(function BrazilMap({ getStateColor, selectedStateI
       '/brazil-states.geojson',
     )
       .then(r => r.json())
-      .then(geo => setFeatures(geo.features ?? []))
+      .then(geo => {
+        const nextStates = ((geo.features ?? []) as GeoFeature[])
+          .map(feature => {
+            const uf = feature.properties.sigla;
+            if (!uf) return null;
+
+            return {
+              uf,
+              d: featureToD(feature),
+              centroid: centroid(feature),
+            };
+          })
+          .filter((state): state is MapState => Boolean(state));
+
+        setStates(nextStates);
+      })
       .catch(() => {})
       .finally(() => setLoading(false));
   }, []);
+
+  const getViewportPoint = (cx: number, cy: number): StateAnchor => {
+    const svg = svgRef.current;
+    if (!svg) return { x: 0, y: 0 };
+    const screenMatrix = svg.getScreenCTM();
+    if (!screenMatrix) return { x: 0, y: 0 };
+
+    const point = svg.createSVGPoint();
+    point.x = cx;
+    point.y = cy;
+
+    const screenPoint = point.matrixTransform(screenMatrix);
+    return { x: screenPoint.x, y: screenPoint.y };
+  };
 
   if (loading) {
     return (
@@ -95,21 +134,17 @@ export const BrazilMap = memo(function BrazilMap({ getStateColor, selectedStateI
 
   return (
     <svg
+      ref={svgRef}
       viewBox={`0 0 ${VW} ${VH}`}
       className="w-full h-full"
       style={{ willChange: 'transform' }}
       aria-label="Mapa interativo do Brasil"
     >
-      {features.map(f => {
-        const uf      = f.properties.sigla;
-        if (!uf) return null;
-
-        const d        = featureToD(f);
+      {states.map(({ uf, d, centroid: [cx, cy] }) => {
         const color    = getStateColor(uf);
         const isSel    = selectedStateId === uf;
         const isHov    = hovered === uf;
         const dimmed   = selectedStateId !== null && !isSel;
-        const [cx, cy] = centroid(f);
         const compactLabel = COMPACT_LABEL_OFFSETS[uf];
         const labelX = cx + (compactLabel?.dx ?? 0);
         const labelY = cy + (compactLabel?.dy ?? 0);
@@ -128,7 +163,7 @@ export const BrazilMap = memo(function BrazilMap({ getStateColor, selectedStateI
                 cursor: 'pointer',
                 filter: isHov || isSel ? 'brightness(1.25)' : undefined,
               }}
-              onClick={() => onStateClick(uf)}
+              onClick={() => onStateClick(uf, getViewportPoint(labelX, labelY))}
               onMouseEnter={() => setHovered(uf)}
               onMouseLeave={() => setHovered(null)}
             />

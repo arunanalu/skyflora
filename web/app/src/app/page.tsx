@@ -3,6 +3,7 @@ import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { AnimatePresence, animate, motion, useMotionValue, useTransform } from 'framer-motion';
 import { useAppStore, Category } from '../presentation/stores/useAppStore';
 import { InteractiveMap } from '../presentation/components/map/InteractiveMap';
+import { StateAnchor } from '../presentation/components/map/BrazilMap';
 import { NationalTable } from '../presentation/components/tables/NationalTable';
 import { StateDetailsModal } from '../presentation/components/map/StateDetailsModal';
 import { Sidebar } from '../presentation/components/sidebar/Sidebar';
@@ -23,6 +24,7 @@ export default function HomePage() {
   const { category, setCategory, setSelectedStateId } = store;
 
   const [showTable, setShowTable] = useState(false);
+  const [stateAnchor, setStateAnchor] = useState<StateAnchor | null>(null);
   const prevCat = useRef<Category>(category);
   useEffect(() => {
     if (prevCat.current !== category) {
@@ -89,10 +91,34 @@ export default function HomePage() {
   const contentArea: React.CSSProperties = {
     position: 'fixed', left: SIDEBAR_OFFSET, right: 32, top: 72, bottom: 96,
   };
-  const handleStateClick = useCallback((stateId: string) => {
+  const handleStateClick = useCallback((stateId: string, anchor: StateAnchor) => {
     setShowTable(false);
+    setStateAnchor(anchor);
     setSelectedStateId(stateId);
   }, [setSelectedStateId]);
+
+  const getFocusedAnchor = () => {
+    if (!stateAnchor) return { x: 690, y: 468 };
+
+    const mapHeight = typeof window === 'undefined' ? 732 : window.innerHeight - 72 - 96;
+    const origin = { x: SIDEBAR_OFFSET, y: 72 + mapHeight / 2 };
+    const scale = 0.64;
+
+    return {
+      x: origin.x + (stateAnchor.x - origin.x) * scale - 128,
+      y: origin.y + (stateAnchor.y - origin.y) * scale + 24,
+    };
+  };
+
+  const connectorStart = getFocusedAnchor();
+  const connectorEnd = {
+    x: typeof window === 'undefined' ? 950 : Math.max(900, window.innerWidth - Math.min(window.innerWidth * 0.38, 560) - 44),
+    y: 300,
+  };
+  const connectorMid = {
+    x: connectorStart.x + (connectorEnd.x - connectorStart.x) * 0.56,
+    y: connectorStart.y - 32,
+  };
 
   return (
     <>
@@ -183,10 +209,9 @@ export default function HomePage() {
               x: hasFocusedState ? -128 : 0,
               y: hasFocusedState ? 24 : 0,
               scale: hasFocusedState ? 0.64 : 1,
-              filter: hasFocusedState ? 'saturate(0.78) contrast(0.92)' : 'saturate(1) contrast(1)',
             }}
             transition={{ duration: 0.38, ease: [0.22, 1, 0.36, 1] }}
-            style={{ transformOrigin: 'center left', willChange: 'transform, filter' }}
+            style={{ transformOrigin: 'center left', willChange: 'transform' }}
           >
             <InteractiveMap data={climateData} onStateClick={handleStateClick} />
           </motion.div>
@@ -206,13 +231,20 @@ export default function HomePage() {
               aria-hidden="true"
             >
               <defs>
-                <linearGradient id="stateFocusGradient" x1="690" y1="468" x2="950" y2="245" gradientUnits="userSpaceOnUse">
+                <linearGradient
+                  id="stateFocusGradient"
+                  x1={connectorStart.x}
+                  y1={connectorStart.y}
+                  x2={connectorEnd.x}
+                  y2={connectorEnd.y}
+                  gradientUnits="userSpaceOnUse"
+                >
                   <stop stopColor="#22d3ee" stopOpacity="0.15" />
                   <stop offset="1" stopColor="#34d399" stopOpacity="0.9" />
                 </linearGradient>
               </defs>
               <motion.path
-                d="M 690 468 C 792 408, 842 288, 950 245"
+                d={`M ${connectorStart.x} ${connectorStart.y} C ${connectorMid.x} ${connectorMid.y}, ${connectorEnd.x - 62} ${connectorEnd.y + 8}, ${connectorEnd.x} ${connectorEnd.y}`}
                 fill="none"
                 stroke="url(#stateFocusGradient)"
                 strokeWidth="1.5"

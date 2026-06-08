@@ -1,12 +1,17 @@
 'use client';
-import { useCallback } from 'react';
+import { useCallback, useMemo } from 'react';
 import { useAppStore } from '../../stores/useAppStore';
-import { BrazilMap } from './BrazilMap';
+import { BrazilMap, StateAnchor } from './BrazilMap';
+import { ClimateData } from '../../../domain/entities/ClimateData';
+import { CO2Emission } from '../../../domain/entities/CO2Emission';
+import { PoliticalProposal } from '../../../domain/entities/PoliticalProposal';
+
+type MapDataRow = ClimateData | CO2Emission | PoliticalProposal;
 
 // Reads category + active filter from store — no props needed for section type
 interface InteractiveMapProps {
-  data: any[];
-  onStateClick: (state: string) => void;
+  data: MapDataRow[];
+  onStateClick: (state: string, anchor: StateAnchor) => void;
 }
 
 export function InteractiveMap({ data, onStateClick }: InteractiveMapProps) {
@@ -20,35 +25,39 @@ export function InteractiveMap({ data, onStateClick }: InteractiveMapProps) {
     : category === 'politics'                   ? politicsFilter
     : co2Filter;
 
+  const rowsByState = useMemo(() => new Map(data?.map(row => [row.stateId, row])), [data]);
+
   const getStateColor = useCallback((id: string): string => {
-    const row = data?.find((d: any) => d.stateId === id);
+    const row = rowsByState.get(id);
     if (!row) return '#1e293b';
 
     if (type === 'climate') {
+      const climateRow = row as ClimateData;
       if (activeFilter === 'atmosfera') {
-        const v = row.atmosphereQuality ?? 0;
+        const v = climateRow.atmosphereQuality ?? 0;
         if (v >= 80) return '#38bdf8';
         if (v >= 50) return '#0ea5e9';
         return '#0284c7';
       }
       if (activeFilter === 'solo') {
-        const v = row.soilMoisture ?? 0;
+        const v = climateRow.soilMoisture ?? 0;
         if (v >= 70) return '#34d399';
         if (v >= 40) return '#10b981';
         return '#059669';
       }
-      const v = row.temperature ?? 0;
+      const v = climateRow.temperature ?? 0;
       if (v >= 30) return '#ea580c';
       if (v >= 28) return '#d97706';
       return '#f59e0b';
     }
 
     if (type === 'politics') {
-      return row.isBeneficial ? '#10b981' : '#ef4444';
+      return (row as PoliticalProposal).isBeneficial ? '#10b981' : '#ef4444';
     }
 
+    const co2Row = row as CO2Emission;
     if (activeFilter === 'principais_poluidores') {
-      switch (row.topPolluter) {
+      switch (co2Row.topPolluter) {
         case 'Desmatamento': return '#ef4444';
         case 'Industria':    return '#6366f1';
         case 'Transporte':   return '#f59e0b';
@@ -56,11 +65,11 @@ export function InteractiveMap({ data, onStateClick }: InteractiveMapProps) {
         default:             return '#475569';
       }
     }
-    const em = row.emissionAmount ?? 0;
+    const em = co2Row.emissionAmount ?? 0;
     if (em >= 150000) return '#7c3aed';
     if (em >= 70000)  return '#8b5cf6';
     return '#a78bfa';
-  }, [type, data, activeFilter]);
+  }, [type, rowsByState, activeFilter]);
 
   return (
     <div className="w-full h-full">

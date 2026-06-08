@@ -1,4 +1,5 @@
 'use client';
+import { useEffect, useRef } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { ArrowUpRight, X } from 'lucide-react';
 import { useAppStore } from '../../stores/useAppStore';
@@ -18,11 +19,26 @@ type DetailRow = {
 };
 
 export function StateDetailsModal({ data = [] }: { data?: DetailRow[] }) {
+  const panelRef = useRef<HTMLElement | null>(null);
   const { selectedStateId, setSelectedStateId, category, climateFilter, co2Filter } = useAppStore();
 
   const close = () => setSelectedStateId(null);
   const stateData = data.filter(d => d.stateId === selectedStateId);
   const firstRow = stateData[0] || {};
+
+  useEffect(() => {
+    if (!selectedStateId) return;
+
+    const onPointerDown = (event: PointerEvent) => {
+      const target = event.target;
+      if (!(target instanceof Node)) return;
+      if (panelRef.current?.contains(target)) return;
+      setSelectedStateId(null);
+    };
+
+    window.addEventListener('pointerdown', onPointerDown, true);
+    return () => window.removeEventListener('pointerdown', onPointerDown, true);
+  }, [selectedStateId, setSelectedStateId]);
 
   const renderClimateContent = () => {
     if (!firstRow.temperature) return <div className="text-slate-500">Dados não disponíveis</div>;
@@ -98,6 +114,7 @@ export function StateDetailsModal({ data = [] }: { data?: DetailRow[] }) {
     <AnimatePresence>
       {selectedStateId && (
         <motion.aside
+          ref={panelRef}
           key={selectedStateId}
           initial={{ opacity: 0, x: 44, scale: 0.98 }}
           animate={{ opacity: 1, x: 0, scale: 1 }}
