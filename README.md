@@ -1,8 +1,8 @@
 # 🌍 Skyflora
 
-**Skyflora** é um projeto acadêmico (de faculdade) focado na extração, cruzamento e análise de dados provenientes de fontes e APIs públicas. O objetivo central é criar uma arquitetura de dados capaz de investigar associações e correlações entre eventos climáticos/ambientais e o comportamento político no Brasil com fins acadêmicos.
+**Skyflora** é um projeto acadêmico (de faculdade) focado na extração, cruzamento e análise de dados provenientes de fontes e APIs públicas, e na sua apresentação visual interativa. O objetivo central é criar uma arquitetura de dados e uma interface web capazes de investigar e expor associações e correlações entre eventos climáticos/ambientais, emissões de CO2 e o comportamento político no Brasil com fins acadêmicos.
 
-Ao disponibilizar este repositório de forma aberta, nossa intenção é que os scripts de extração, transformação e documentação possam ser livremente reaproveitados por pesquisadores, estudantes ou qualquer pessoa interessada em engenharia de dados, ciência de dados, meio ambiente e transparência governamental.
+Ao disponibilizar este repositório de forma aberta, nossa intenção é que os scripts de extração, transformação, a documentação e a estrutura web possam ser livremente reaproveitados por pesquisadores, desenvolvedores, estudantes ou qualquer pessoa interessada em engenharia de dados, ciência de dados, desenvolvimento web, meio ambiente e transparência governamental.
 
 ---
 
@@ -16,10 +16,11 @@ Ao disponibilizar este repositório de forma aberta, nossa intenção é que os 
 
 ## 📂 Módulos do Repositório
 
-O projeto é dividido em frentes independentes de extração de dados:
+O projeto é dividido em frentes independentes (extração de dados e interface web):
 
 - 🌦️ [**`dados_climaticos/`**](./dados_climaticos): Scripts para varredura de dados meteorológicos e espaciais. Mais detalhes no [README específico do módulo](./dados_climaticos/v2/README.md).
 - 🏛️ [**`dados_politicos/`**](./dados_politicos): Scripts para obtenção de votações ambientais e gastos de deputados. Mais detalhes no [README específico do módulo](./dados_politicos/README.md).
+- 💻 [**`web/`**](./web): Aplicação web (Next.js) interativa baseada em *scroll storytelling*, projetada para consumir e visualizar os dados processados (clima, política e emissão de CO2) por meio de gráficos, mapas e tabelas dinâmicas. Mais detalhes no [README de design do módulo web](./web/design/README.md).
 
 *(Nota: Para evitar sobrecarga, os arquivos gerados de dados brutos como `.csv` ou `.parquet` são ignorados no repositório remoto via `.gitignore`, devendo ser gerados localmente pela execução dos scripts).*
 
