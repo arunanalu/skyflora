@@ -18,7 +18,7 @@ type DetailRow = {
   polluterEmission?: number;
 };
 
-export function StateDetailsModal({ data = [] }: { data?: DetailRow[] }) {
+export function StateDetailsModal({ data = [], rightOffset = 32 }: { data?: DetailRow[]; rightOffset?: number }) {
   const panelRef = useRef<HTMLElement | null>(null);
   const { selectedStateId, setSelectedStateId, category, climateFilter, co2Filter } = useAppStore();
 
@@ -76,8 +76,8 @@ export function StateDetailsModal({ data = [] }: { data?: DetailRow[] }) {
 
     return (
       <div className="flex flex-col gap-3 max-h-44 overflow-y-auto pr-2">
-        {stateData.map(prop => (
-          <div key={prop.id} className="bg-slate-950/35 p-3 rounded-2xl border border-slate-700/50 flex justify-between items-center gap-4">
+        {stateData.map((prop, index) => (
+          <div key={prop.id || `prop-${index}`} className="bg-slate-950/35 p-3 rounded-2xl border border-slate-700/50 flex justify-between items-center gap-4">
             <div>
               <div className="text-sm font-bold text-slate-200">{prop.title}</div>
               <div className="text-xs text-slate-500">{prop.status}</div>
@@ -121,7 +121,8 @@ export function StateDetailsModal({ data = [] }: { data?: DetailRow[] }) {
           animate={{ opacity: 1, x: 0, scale: 1 }}
           exit={{ opacity: 0, x: 44, scale: 0.98 }}
           transition={{ duration: 0.32, ease: [0.22, 1, 0.36, 1] }}
-          className="fixed right-8 top-28 z-[180] w-[min(38vw,560px)] min-w-[430px] max-h-[calc(100vh-14rem)] pointer-events-auto"
+          className="fixed top-28 z-[180] w-[min(38vw,560px)] min-w-[430px] max-h-[calc(100vh-14rem)] pointer-events-auto"
+          style={{ right: rightOffset }}
         >
           <div className="relative overflow-hidden rounded-[2rem] border border-slate-700/70 bg-[#101827]/92 p-7 shadow-2xl shadow-black/45 backdrop-blur-xl">
             <div className="absolute inset-x-8 top-0 h-px bg-gradient-to-r from-transparent via-emerald-300/90 to-cyan-300/70" />

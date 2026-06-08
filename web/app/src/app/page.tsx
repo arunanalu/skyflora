@@ -11,6 +11,8 @@ import { ClimateData } from '../domain/entities/ClimateData';
 
 const SIDEBAR_OFFSET = 308;
 const SCROLL_LOCK_MS = 300;
+const FOCUS_PANEL_WIDTH = 560;
+const FOCUS_CLUSTER_MAX_WIDTH = 1240;
 const SECTION_CATS: Category[] = ['hero', 'climate', 'politics', 'co2'];
 
 const SECTION_META = {
@@ -102,8 +104,12 @@ export default function HomePage() {
   }, []);
 
   const connectorStart = stateAnchor ?? { x: 690, y: 468 };
+  const viewportWidth = typeof window === 'undefined' ? 1440 : window.innerWidth;
+  const focusClusterLeft = Math.max(SIDEBAR_OFFSET + 32, (viewportWidth - FOCUS_CLUSTER_MAX_WIDTH) / 2);
+  const focusClusterRight = viewportWidth - focusClusterLeft - FOCUS_CLUSTER_MAX_WIDTH;
+  const focusPanelRight = Math.max(32, focusClusterRight);
   const connectorEnd = {
-    x: typeof window === 'undefined' ? 950 : Math.max(window.innerWidth * 0.62, window.innerWidth - Math.min(window.innerWidth * 0.38, 560) - 32),
+    x: viewportWidth - focusPanelRight - FOCUS_PANEL_WIDTH + 32,
     y: 300,
   };
   const connectorMid = {
@@ -289,7 +295,7 @@ export default function HomePage() {
 
       </div>
 
-      <StateDetailsModal data={climateData} />
+      <StateDetailsModal data={climateData} rightOffset={focusPanelRight} />
     </>
   );
 }
