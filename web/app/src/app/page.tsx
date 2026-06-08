@@ -1,5 +1,5 @@
 'use client';
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { AnimatePresence, animate, motion, useMotionValue, useTransform } from 'framer-motion';
 import { useAppStore, Category } from '../presentation/stores/useAppStore';
 import { InteractiveMap } from '../presentation/components/map/InteractiveMap';
@@ -9,6 +9,7 @@ import { Sidebar } from '../presentation/components/sidebar/Sidebar';
 import { ClimateData } from '../domain/entities/ClimateData';
 
 const SIDEBAR_OFFSET = 308;
+const SCROLL_LOCK_MS = 300;
 const SECTION_CATS: Category[] = ['hero', 'climate', 'politics', 'co2'];
 
 const SECTION_META = {
@@ -40,12 +41,12 @@ export default function HomePage() {
   const sectionIdx     = useMotionValue(0);
   const currentSection = useRef(0);
 
-  const goToSection = (idx: number) => {
+  const goToSection = useCallback((idx: number) => {
     const t = Math.max(0, Math.min(3, idx));
     currentSection.current = t;
     setCategory(SECTION_CATS[t]);
-    animate(sectionIdx, t, { type: 'spring', stiffness: 400, damping: 60, mass: 1 });
-  };
+    animate(sectionIdx, t, { type: 'tween', duration: 0.28, ease: 'easeOut' });
+  }, [sectionIdx, setCategory]);
 
   useEffect(() => {
     let locked = false;
@@ -56,7 +57,7 @@ export default function HomePage() {
       if (next !== currentSection.current) {
         locked = true;
         goToSection(next);
-        setTimeout(() => { locked = false; }, 560);
+        setTimeout(() => { locked = false; }, SCROLL_LOCK_MS);
       }
     };
     const onNavigate = (e: Event) => goToSection((e as CustomEvent<number>).detail);
@@ -66,7 +67,7 @@ export default function HomePage() {
       window.removeEventListener('wheel', onWheel);
       window.removeEventListener('skyflora:navigate', onNavigate);
     };
-  }, []);
+  }, [goToSection]);
 
   const heroOpacity = useTransform(sectionIdx, [0, 1], [1, 0]);
   const heroY       = useTransform(sectionIdx, [0, 1], [0, -80]);
@@ -84,9 +85,14 @@ export default function HomePage() {
     : category === 'politics'                   ? store.politicsFilter
     : store.co2Filter;
 
+  const hasFocusedState = category !== 'hero' && Boolean(store.selectedStateId);
   const contentArea: React.CSSProperties = {
     position: 'fixed', left: SIDEBAR_OFFSET, right: 32, top: 72, bottom: 96,
   };
+  const handleStateClick = useCallback((stateId: string) => {
+    setShowTable(false);
+    setSelectedStateId(stateId);
+  }, [setSelectedStateId]);
 
   return (
     <>
@@ -107,22 +113,25 @@ export default function HomePage() {
             className="fixed left-8 z-[200] pointer-events-auto flex flex-col justify-center gap-5"
             style={{ top: 72, bottom: 96 }}
           >
-            <AnimatePresence mode="wait">
-              <motion.div
-                key={category}
-                initial={{ opacity: 0, x: -10 }}
-                animate={{ opacity: 1, x: 0 }}
-                exit={{ opacity: 0, x: -10 }}
-                transition={{ duration: 0.18, ease: 'easeOut' }}
-              >
-                <div className={`text-[10px] uppercase tracking-[0.25em] font-bold mb-1 ${meta.color}`}>
-                  {meta.tag}
-                </div>
-                <h2 className="text-sm font-serif text-white font-medium leading-snug" style={{ maxWidth: 220 }}>
-                  {meta.title}
-                </h2>
-              </motion.div>
-            </AnimatePresence>
+            <div className="relative h-14 w-[240px] shrink-0">
+              <AnimatePresence initial={false}>
+                <motion.div
+                  key={category}
+                  className="absolute inset-x-0 top-0"
+                  initial={{ opacity: 0, y: 4 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -4 }}
+                  transition={{ duration: 0.16, ease: 'easeOut' }}
+                >
+                  <div className={`text-[10px] uppercase tracking-[0.25em] font-bold mb-1 ${meta.color}`}>
+                    {meta.tag}
+                  </div>
+                  <h2 className="text-sm font-serif text-white font-medium leading-snug" style={{ maxWidth: 220 }}>
+                    {meta.title}
+                  </h2>
+                </motion.div>
+              </AnimatePresence>
+            </div>
             <Sidebar />
           </div>
         )}
@@ -133,16 +142,18 @@ export default function HomePage() {
           className="absolute inset-0 flex items-center justify-center p-8"
         >
           <div {...inert(category === 'hero')} className="contents">
-            <div className="text-center max-w-4xl z-10">
-              <div className="inline-flex items-center gap-3 px-4 py-2 rounded-full bg-white/5 border border-white/10 mb-8 backdrop-blur-md">
-                <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-                <span className="text-xs uppercase tracking-widest text-slate-300">Observatório Nacional</span>
-              </div>
+            <div className="text-center max-w-5xl z-10">
               <h1 className="text-5xl md:text-7xl font-serif text-white leading-tight font-medium mb-8">
-                A ciência do clima e o impacto político num só ecossistema
+                A ciência do{' '}
+                <span className="font-sans italic font-semibold text-emerald-400 drop-shadow-[0_0_24px_rgba(52,211,153,0.28)]">
+                  clima
+                </span>
+                <br />
+                e o impacto político num só ecossistema
               </h1>
-              <p className="text-lg md:text-xl text-slate-400 mb-12 max-w-2xl mx-auto leading-relaxed">
-                Skyflora funde dados climáticos, legislativos e emissões de CO₂ em uma única visualização interativa.
+              <p className="text-lg md:text-xl text-slate-400 mb-12 max-w-3xl mx-auto leading-relaxed">
+                Skyflora conecta dados climáticos, decisões legislativas e emissões de CO₂ em visualizações interativas
+                para ampliar a visibilidade e a transparência sobre o meio ambiente no Brasil.
               </p>
             </div>
             <button
@@ -159,14 +170,65 @@ export default function HomePage() {
 
         {/* Persistent map — stays mounted, colors update with category */}
         <motion.div
-          style={{ ...contentArea, opacity: mapOpacity, zIndex: 10, pointerEvents: category === 'hero' ? 'none' : 'auto' }}
+          style={{
+            ...contentArea,
+            opacity: hasFocusedState ? 0.58 : mapOpacity,
+            zIndex: 10,
+            pointerEvents: category === 'hero' ? 'none' : 'auto',
+          }}
         >
-          <InteractiveMap data={climateData} onStateClick={setSelectedStateId} />
+          <motion.div
+            className="h-full w-full"
+            animate={{
+              x: hasFocusedState ? -128 : 0,
+              y: hasFocusedState ? 24 : 0,
+              scale: hasFocusedState ? 0.64 : 1,
+              filter: hasFocusedState ? 'saturate(0.78) contrast(0.92)' : 'saturate(1) contrast(1)',
+            }}
+            transition={{ duration: 0.38, ease: [0.22, 1, 0.36, 1] }}
+            style={{ transformOrigin: 'center left', willChange: 'transform, filter' }}
+          >
+            <InteractiveMap data={climateData} onStateClick={handleStateClick} />
+          </motion.div>
         </motion.div>
+
+        <AnimatePresence>
+          {hasFocusedState && (
+            <motion.svg
+              key="state-focus-connector"
+              className="fixed inset-0 pointer-events-none z-[120]"
+              viewBox="0 0 1440 900"
+              preserveAspectRatio="none"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.2 }}
+              aria-hidden="true"
+            >
+              <defs>
+                <linearGradient id="stateFocusGradient" x1="690" y1="468" x2="950" y2="245" gradientUnits="userSpaceOnUse">
+                  <stop stopColor="#22d3ee" stopOpacity="0.15" />
+                  <stop offset="1" stopColor="#34d399" stopOpacity="0.9" />
+                </linearGradient>
+              </defs>
+              <motion.path
+                d="M 690 468 C 792 408, 842 288, 950 245"
+                fill="none"
+                stroke="url(#stateFocusGradient)"
+                strokeWidth="1.5"
+                strokeLinecap="round"
+                initial={{ pathLength: 0 }}
+                animate={{ pathLength: 1 }}
+                exit={{ pathLength: 0 }}
+                transition={{ duration: 0.42, ease: 'easeOut' }}
+              />
+            </motion.svg>
+          )}
+        </AnimatePresence>
 
         {/* Table overlay — slides in over the map */}
         <AnimatePresence>
-          {category !== 'hero' && showTable && (
+          {category !== 'hero' && !hasFocusedState && showTable && (
             <motion.div
               key="table-overlay"
               initial={{ opacity: 0, y: 12 }}
@@ -187,7 +249,7 @@ export default function HomePage() {
         </AnimatePresence>
 
         {/* Toggle button — fixed in content area top-right */}
-        {category !== 'hero' && (
+        {category !== 'hero' && !hasFocusedState && (
           <button
             type="button"
             onClick={() => setShowTable(v => !v)}

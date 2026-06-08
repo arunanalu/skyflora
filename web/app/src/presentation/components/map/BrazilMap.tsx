@@ -18,6 +18,17 @@ const LON_MIN = -74.0, LON_MAX = -28.0;
 const LAT_MAX =   5.5, LAT_MIN = -34.0;
 const VW = 540, VH = 480;
 
+const COMPACT_LABEL_OFFSETS: Record<string, { dx: number; dy: number; fontSize?: number }> = {
+  AL: { dx: 30, dy: 1 },
+  DF: { dx: 24, dy: -18 },
+  ES: { dx: 28, dy: 8 },
+  PB: { dx: 31, dy: -8 },
+  PE: { dx: 32, dy: 3 },
+  RJ: { dx: 27, dy: 18 },
+  RN: { dx: 31, dy: -16 },
+  SE: { dx: 29, dy: 10 },
+};
+
 function project([lon, lat]: Coord): Coord {
   const x = ((lon - LON_MIN) / (LON_MAX - LON_MIN)) * VW;
   const y = ((LAT_MAX - lat) / (LAT_MAX - LAT_MIN)) * VH;
@@ -99,6 +110,10 @@ export const BrazilMap = memo(function BrazilMap({ getStateColor, selectedStateI
         const isHov    = hovered === uf;
         const dimmed   = selectedStateId !== null && !isSel;
         const [cx, cy] = centroid(f);
+        const compactLabel = COMPACT_LABEL_OFFSETS[uf];
+        const labelX = cx + (compactLabel?.dx ?? 0);
+        const labelY = cy + (compactLabel?.dy ?? 0);
+        const labelFontSize = compactLabel?.fontSize ?? (isSel ? 11 : 9);
 
         return (
           <g key={uf}>
@@ -118,17 +133,34 @@ export const BrazilMap = memo(function BrazilMap({ getStateColor, selectedStateI
               onMouseLeave={() => setHovered(null)}
             />
             {(isSel || isHov) && (
-              <text
-                x={cx} y={cy}
-                textAnchor="middle"
-                dominantBaseline="middle"
-                fontSize={isSel ? 11 : 9}
-                fontWeight={700}
-                fill="#f8fafc"
-                style={{ pointerEvents: 'none' }}
-              >
-                {uf}
-              </text>
+              <>
+                {compactLabel && (
+                  <line
+                    x1={cx}
+                    y1={cy}
+                    x2={labelX - 7}
+                    y2={labelY}
+                    stroke="#e2e8f0"
+                    strokeWidth={0.8}
+                    strokeOpacity={0.85}
+                    style={{ pointerEvents: 'none' }}
+                  />
+                )}
+                <text
+                  x={labelX} y={labelY}
+                  textAnchor="middle"
+                  dominantBaseline="middle"
+                  fontSize={labelFontSize}
+                  fontWeight={700}
+                  fill="#f8fafc"
+                  stroke="#0f172a"
+                  strokeWidth={2.6}
+                  paintOrder="stroke"
+                  style={{ pointerEvents: 'none' }}
+                >
+                  {uf}
+                </text>
+              </>
             )}
           </g>
         );
