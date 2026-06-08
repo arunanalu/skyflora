@@ -1,0 +1,142 @@
+@import "tailwindcss" source(none);
+@source "../src";
+@import "tw-animate-css";
+
+@custom-variant dark (&:is(.dark *));
+
+@theme inline {
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-sky: var(--sky);
+  --color-flora: var(--flora);
+  --color-flora-deep: var(--flora-deep);
+  --color-alert: var(--alert);
+  --color-warn: var(--warn);
+  --color-slate-deep: var(--slate-deep);
+  --font-display: "Fraunces", Georgia, serif;
+  --font-sans: "Inter", system-ui, sans-serif;
+}
+
+:root {
+  --radius: 0.75rem;
+  /* Skyflora dark — slate base with emerald/sky/amber accents */
+  --background: #0f172a;
+  --foreground: #e2e8f0;
+  --card: #1e2937;
+  --card-foreground: #e2e8f0;
+  --popover: #1e2937;
+  --popover-foreground: #e2e8f0;
+  --primary: #059669;
+  --primary-foreground: #0f172a;
+  --secondary: #1e2937;
+  --secondary-foreground: #e2e8f0;
+  --muted: #1e2937;
+  --muted-foreground: #94a3b8;
+  --accent: #0ea5e9;
+  --accent-foreground: #0f172a;
+  --destructive: #ef4444;
+  --destructive-foreground: #0f172a;
+  --border: #334155;
+  --input: #334155;
+  --ring: #0ea5e9;
+
+  --sky: #0ea5e9;
+  --flora: #10b981;
+  --flora-deep: #059669;
+  --alert: #f59e0b;
+  --warn: #f59e0b;
+  --slate-deep: #020617;
+}
+
+.dark {
+  --background: #0f172a;
+  --foreground: #e2e8f0;
+  --card: #1e2937;
+  --card-foreground: #e2e8f0;
+  --popover: #1e2937;
+  --popover-foreground: #e2e8f0;
+  --primary: #059669;
+  --primary-foreground: #0f172a;
+  --secondary: #1e2937;
+  --secondary-foreground: #e2e8f0;
+  --muted: #1e2937;
+  --muted-foreground: #94a3b8;
+  --accent: #0ea5e9;
+  --accent-foreground: #0f172a;
+  --destructive: #ef4444;
+  --destructive-foreground: #0f172a;
+  --border: #334155;
+  --input: #334155;
+  --ring: #0ea5e9;
+}
+
+@layer base {
+  * { border-color: var(--color-border); }
+  html { scroll-behavior: smooth; }
+  body {
+    background-color: var(--color-background);
+    color: var(--color-foreground);
+    font-family: var(--font-sans);
+    background-image:
+      radial-gradient(ellipse 80% 50% at 50% -10%, color-mix(in oklab, var(--flora) 12%, transparent), transparent 60%),
+      radial-gradient(ellipse 60% 40% at 90% 100%, color-mix(in oklab, var(--sky) 10%, transparent), transparent 60%);
+    background-attachment: fixed;
+  }
+  h1, h2, h3 { font-family: var(--font-display); letter-spacing: -0.02em; }
+}
+
+@utility glass {
+  background: color-mix(in oklab, var(--card) 70%, transparent);
+  backdrop-filter: blur(16px) saturate(140%);
+  -webkit-backdrop-filter: blur(16px) saturate(140%);
+  border: 1px solid color-mix(in oklab, var(--foreground) 8%, transparent);
+}
+
+@utility glass-strong {
+  background: color-mix(in oklab, var(--card) 88%, transparent);
+  backdrop-filter: blur(24px) saturate(160%);
+  -webkit-backdrop-filter: blur(24px) saturate(160%);
+  border: 1px solid color-mix(in oklab, var(--foreground) 10%, transparent);
+}
+
+@utility text-balance {
+  text-wrap: balance;
+}
+
+@keyframes float-slow {
+  0%, 100% { transform: translateY(0) }
+  50% { transform: translateY(-8px) }
+}
+@keyframes pulse-soft {
+  0%, 100% { opacity: 0.6 }
+  50% { opacity: 1 }
+}
+@keyframes drift {
+  0% { transform: translate(0,0) }
+  50% { transform: translate(20px, -10px) }
+  100% { transform: translate(0,0) }
+}
+.animate-float-slow { animation: float-slow 5s ease-in-out infinite }
+.animate-pulse-soft { animation: pulse-soft 3s ease-in-out infinite }
+.animate-drift { animation: drift 18s ease-in-out infinite }
