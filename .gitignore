@@ -4,6 +4,7 @@ __pycache__/
 *.pyc
 data/*.parquet
 data/*.csv
+*/node_modules
 
 *.csv
 *.parquet

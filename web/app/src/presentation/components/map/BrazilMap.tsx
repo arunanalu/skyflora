@@ -1,0 +1,138 @@
+'use client';
+import React, { memo, useEffect, useState } from 'react';
+
+
+type Coord = [number, number];
+type Ring  = Coord[];
+type GeoFeature = {
+  properties: { sigla: string };
+  geometry: {
+    type: 'Polygon' | 'MultiPolygon';
+    coordinates: Ring[] | Ring[][];
+  };
+};
+
+// Brazil bounding box — equirectangular projection
+// Geographic span: lon 46° × lat 39.5°; corrected aspect ≈ 1.13 (wider than tall)
+const LON_MIN = -74.0, LON_MAX = -28.0;
+const LAT_MAX =   5.5, LAT_MIN = -34.0;
+const VW = 540, VH = 480;
+
+function project([lon, lat]: Coord): Coord {
+  const x = ((lon - LON_MIN) / (LON_MAX - LON_MIN)) * VW;
+  const y = ((LAT_MAX - lat) / (LAT_MAX - LAT_MIN)) * VH;
+  return [x, y];
+}
+
+function ringToD(ring: Ring): string {
+  const pts = ring.map(c => project(c).join(','));
+  return `M ${pts.join(' L ')} Z`;
+}
+
+function featureToD(f: GeoFeature): string {
+  if (f.geometry.type === 'Polygon') {
+    return (f.geometry.coordinates as Ring[]).map(ringToD).join(' ');
+  }
+  return (f.geometry.coordinates as Ring[][])
+    .flatMap(poly => (poly as Ring[]).map(ringToD))
+    .join(' ');
+}
+
+function centroid(f: GeoFeature): Coord {
+  let ring: Ring;
+  if (f.geometry.type === 'Polygon') {
+    ring = (f.geometry.coordinates as Ring[])[0];
+  } else {
+    const polys = f.geometry.coordinates as Ring[][];
+    ring = polys.reduce((a, b) => (a[0].length > b[0].length ? a : b))[0];
+  }
+  const avg = ring.reduce(([ax, ay], [x, y]) => [ax + x, ay + y], [0, 0]);
+  return project([avg[0] / ring.length, avg[1] / ring.length]);
+}
+
+export interface BrazilMapProps {
+  getStateColor: (uf: string) => string;
+  selectedStateId: string | null;
+  onStateClick: (uf: string) => void;
+}
+
+export const BrazilMap = memo(function BrazilMap({ getStateColor, selectedStateId, onStateClick }: BrazilMapProps) {
+  const [features, setFeatures] = useState<GeoFeature[]>([]);
+  const [loading, setLoading]   = useState(true);
+  const [hovered, setHovered]   = useState<string | null>(null);
+
+  useEffect(() => {
+    fetch(
+      '/brazil-states.geojson',
+    )
+      .then(r => r.json())
+      .then(geo => setFeatures(geo.features ?? []))
+      .catch(() => {})
+      .finally(() => setLoading(false));
+  }, []);
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-full text-slate-500 text-sm gap-2">
+        <svg className="w-4 h-4 animate-spin" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 2v4m0 12v4M4.93 4.93l2.83 2.83m8.48 8.48 2.83 2.83M2 12h4m12 0h4M4.93 19.07l2.83-2.83m8.48-8.48 2.83-2.83" />
+        </svg>
+        Carregando mapa...
+      </div>
+    );
+  }
+
+  return (
+    <svg
+      viewBox={`0 0 ${VW} ${VH}`}
+      className="w-full h-full"
+      style={{ willChange: 'transform' }}
+      aria-label="Mapa interativo do Brasil"
+    >
+      {features.map(f => {
+        const uf      = f.properties.sigla;
+        if (!uf) return null;
+
+        const d        = featureToD(f);
+        const color    = getStateColor(uf);
+        const isSel    = selectedStateId === uf;
+        const isHov    = hovered === uf;
+        const dimmed   = selectedStateId !== null && !isSel;
+        const [cx, cy] = centroid(f);
+
+        return (
+          <g key={uf}>
+            <path
+              d={d}
+              fill={color}
+              fillOpacity={dimmed ? 0.35 : 1}
+              stroke="#0f172a"
+              strokeWidth={isSel ? 2 : 0.6}
+              strokeLinejoin="round"
+              style={{
+                cursor: 'pointer',
+                filter: isHov || isSel ? 'brightness(1.25)' : undefined,
+              }}
+              onClick={() => onStateClick(uf)}
+              onMouseEnter={() => setHovered(uf)}
+              onMouseLeave={() => setHovered(null)}
+            />
+            {(isSel || isHov) && (
+              <text
+                x={cx} y={cy}
+                textAnchor="middle"
+                dominantBaseline="middle"
+                fontSize={isSel ? 11 : 9}
+                fontWeight={700}
+                fill="#f8fafc"
+                style={{ pointerEvents: 'none' }}
+              >
+                {uf}
+              </text>
+            )}
+          </g>
+        );
+      })}
+    </svg>
+  );
+});

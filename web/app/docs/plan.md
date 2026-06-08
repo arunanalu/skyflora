@@ -145,3 +145,154 @@ Para que cada etapa seja uma *task* atômica e claramente executável por uma LL
 - **Substituição dos Mocks**: Trocar a injeção de dependência (`MockRepository` -> `DatabricksRepository`) nos endpoints do BFF de forma definitiva.
 - **Gatilhos de Revalidação**: Implementação da rota `POST /api/revalidate` para uso do Webhook (descrito na subseção 4.2).
 - **Deploy**: Implantação e hospedagem do monólito Next.js.
+
+
+---
+
+## 9. Implementação Concluída — Scroll Storytelling e Mapa Interativo
+
+> Esta seção documenta as decisões técnicas tomadas durante a implementação real da interface, servindo de referência para manutenção futura e para a transição ao `DatabricksRepository`.
+
+### 9.1 Scroll Virtual (sem `window.scroll`)
+
+A abordagem de scroll convencional (HTML scroll + `IntersectionObserver`) foi descartada. Em vez disso, a navegação entre seções é controlada por um único **`useMotionValue(0)`** chamado `sectionIdx` (Framer Motion).
+
+**Por quê?**
+- `window.scroll` em elementos `fixed` causa conflitos com `overflow: hidden` e impede o controle fino de animações.
+- O `MotionValue` permite transformar posição, opacidade e escala de cada seção de forma declarativa, sem re-renderizar o componente.
+
+**Como funciona:**
+- Valores: `0 = hero`, `1 = climate`, `2 = politics`, `3 = co2`.
+- Ao receber um evento `wheel`, `goToSection(idx)` chama `animate(sectionIdx, target, springConfig)`.
+- `useTransform` deriva `opacity`, `y` e `scale` de `sectionIdx` para a seção hero (única que ainda anima visualmente).
+- Um lock booleano (`locked`) com `setTimeout(560ms)` impede múltiplos scrolls simultâneos.
+- Navegação pelo `Topbar` usa `window.dispatchEvent(new CustomEvent('skyflora:navigate', { detail: idx }))`.
+
+**Configuração de spring escolhida:**
+```ts
+{ type: 'spring', stiffness: 400, damping: 60, mass: 1 }
+// Overdamped (ζ ≈ 1.5): sem overshoot, settle ~500ms, lock liberado em 560ms.
+```
+
+**Arquivo:** `src/app/page.tsx`
+
+---
+
+### 9.2 Mapa SVG do Brasil
+
+O mapa é renderizado com SVG puro a partir de um GeoJSON local — sem biblioteca de mapas externa.
+
+**GeoJSON:**
+- Fonte original: `codeforamerica/click_that_hood` (Brazil states, 27 features).
+- Arquivo salvo localmente em `public/brazil-states.geojson` (3.3 MB) para eliminar a dependência de rede e latência.
+- `fetch('/brazil-states.geojson')` — servido pelo Next.js como arquivo estático.
+- Cada feature tem `properties.sigla` com a sigla do estado (UF).
+
+**Projeção equiretangular:**
+```ts
+const LON_MIN = -74.0, LON_MAX = -28.0;  // span: 46°
+const LAT_MAX =   5.5, LAT_MIN = -34.0;  // span: 39.5°
+const VW = 540, VH = 480;               // aspect ratio ≈ 1.125 ≈ proporção real do Brasil
+
+function project([lon, lat]): [x, y] {
+  x = ((lon - LON_MIN) / (LON_MAX - LON_MIN)) * VW;
+  y = ((LAT_MAX - lat) / (LAT_MAX - LAT_MIN)) * VH;
+}
+```
+
+A razão VW/VH = 1.125 corresponde à proporção geográfica corrigida do Brasil (lon_span × cos(lat_center) / lat_span ≈ 1.13).
+
+**Otimizações de performance no SVG:**
+- `React.memo` no componente `BrazilMap` — evita re-render durante scroll.
+- `useCallback` para `getStateColor` em `InteractiveMap` — props estáveis garantem que o memo funcione.
+- `style={{ willChange: 'transform' }}` no `<svg>` — promove para compositing layer GPU, evitando rasterização em cada frame.
+- Removido `transition-all duration-150` dos `<path>` — essa classe CSS causava recálculo de estilo para todos os 27 estados a cada frame de animação do scroll.
+- Hover e seleção usam `style={{ filter: 'brightness(1.25)' }}` direto (sem CSS transition).
+
+**Arquivos:** `src/presentation/components/map/BrazilMap.tsx`, `src/presentation/components/map/InteractiveMap.tsx`
+
+---
+
+### 9.3 Arquitetura: Mapa Compartilhado (Persistent Map)
+
+**Problema resolvido:** As três seções de dados (Clima, Política, CO₂) tinham cada uma sua instância de `InteractiveMap`. Durante o scroll entre elas, o Framer Motion animava (y + opacity + scale) o SVG inteiro — causando jank mesmo com GPU compositing.
+
+**Solução implementada:** Um único `<InteractiveMap>` montado uma vez, posicionado como `fixed` na área de conteúdo:
+
+```tsx
+// Em page.tsx — fora de qualquer motion.section
+<motion.div
+  style={{ position: 'fixed', left: 308, right: 32, top: 72, bottom: 96,
+           opacity: mapOpacity,   // fade-in saindo do hero
+           zIndex: 10 }}
+>
+  <InteractiveMap data={climateData} onStateClick={setSelectedStateId} />
+</motion.div>
+```
+
+**Comportamento ao scrollar entre seções de dados:**
+- O mapa **não anima** — permanece fixo na tela.
+- Somente o painel esquerdo (título + sidebar) anima via `AnimatePresence` com fade+slide de 180ms.
+- `InteractiveMap` relê `category`, `climateFilter`, `politicsFilter`, `co2Filter` do store Zustand e recomputa `getStateColor` via `useCallback`. O `BrazilMap` (com `React.memo`) re-renderiza apenas quando as cores mudam — sem animação.
+
+**Tabela:**
+- Estado `showTable: boolean` único para todas as seções, resetado quando `category` muda.
+- Quando ativo, um `motion.div` com `AnimatePresence` (`zIndex: 15`) desliza por cima do mapa com `bg-[#111827]/95 backdrop-blur-sm`.
+
+---
+
+### 9.4 Layout — Painel Esquerdo
+
+O painel esquerdo (título da seção + filtros) é um elemento `fixed` separado, **fora** do stack de seções:
+
+```tsx
+<div
+  className="fixed left-8 z-[200] flex flex-col justify-center gap-5"
+  style={{ top: 72, bottom: 96 }}   // ancorado entre topbar (60px) e timeline
+>
+  <AnimatePresence mode="wait">
+    <motion.div key={category} initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }} ...>
+      {/* tag + título da seção atual */}
+    </motion.div>
+  </AnimatePresence>
+  <Sidebar />
+</div>
+```
+
+`top: 72` e `bottom: 96` garantem que o painel nunca invade o `Topbar` (60px) mesmo em viewports pequenas — ao contrário de `top-1/2 -translate-y-1/2`, que poderia ultrapassar o topo em telas com menos de ~480px de altura.
+
+---
+
+### 9.5 Modal de Estado (`StateDetailsModal`)
+
+**Problema:** O botão ✕ tinha área de clique fragmentada. Causa: o card tinha `overflow: hidden` + `border-radius: 2rem` (32px). O botão em `top-6 right-6` (24px) ficava dentro do raio de curvatura — o clip CSS cortava visualmente e funcionalmente parte do botão.
+
+**Solução:**
+- Removido `overflow: hidden` do card.
+- Gradiente superior usa `rounded-tl-[2rem] rounded-tr-[2rem]` explicitamente.
+- Botão movido para `top-5 right-5` com `z-index: 20` e ✕ Unicode real.
+- Modal com `z-[500]` posicionado **fora** do container `overflow: hidden` principal (`div.fixed.inset-0`) para garantir que `position: fixed` e `z-index` funcionem sem interferência de contextos de empilhamento internos.
+- Fechar ao clicar fora: `onClick={close}` no backdrop + `onClick={e => e.stopPropagation()}` no card.
+
+---
+
+### 9.6 Pointer Events e `inert`
+
+Para evitar que seções empilhadas (`absolute inset-0`) bloqueiem cliques na seção ativa:
+
+- `motion.section` de cada seção recebe `pointerEvents: category === 'X' ? 'auto' : 'none'` via inline style.
+- O atributo `inert={true}` (React 19, tipo `boolean`) é aplicado ao div de conteúdo de seções inativas — bloqueia toda a subárvore (foco, pointer events, acessibilidade).
+- `setCategory` é chamado **imediatamente** em `goToSection` (não via `useMotionValueEvent`) para evitar 60 atualizações de estado por segundo durante a animação spring.
+
+---
+
+### 9.7 Stacks e Versões
+
+| Dependência | Versão | Uso principal |
+|---|---|---|
+| Next.js | 16.2.7 | App Router, BFF, ISR |
+| React | 19 | `inert` como boolean nativo |
+| Framer Motion | 12 | `useMotionValue`, `useTransform`, `AnimatePresence`, `animate()` |
+| Zustand | — | Store global (`category`, `selectedStateId`, filtros, datas) |
+| Tailwind CSS | 4 | Estilização utility-first |
+
