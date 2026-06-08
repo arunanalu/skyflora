@@ -7,23 +7,27 @@ import { CO2Emission } from '../../../domain/entities/CO2Emission';
 import { PoliticalProposal } from '../../../domain/entities/PoliticalProposal';
 
 type MapDataRow = ClimateData | CO2Emission | PoliticalProposal;
+type DataCategory = 'climate' | 'politics' | 'co2';
 
 // Reads category + active filter from store — no props needed for section type
 interface InteractiveMapProps {
   data: MapDataRow[];
+  categoryOverride?: DataCategory;
   onStateClick: (state: string, anchor: StateAnchor) => void;
   onSelectedStateAnchorChange?: (anchor: StateAnchor) => void;
 }
 
-export function InteractiveMap({ data, onStateClick, onSelectedStateAnchorChange }: InteractiveMapProps) {
+export function InteractiveMap({ data, categoryOverride, onStateClick, onSelectedStateAnchorChange }: InteractiveMapProps) {
   const { selectedStateId, category, climateFilter, politicsFilter, co2Filter } = useAppStore();
 
-  const type = category === 'climate' ? 'climate'
-    : category === 'politics'         ? 'politics'
+  const effectiveCategory = categoryOverride ?? (category === 'hero' ? 'climate' : category);
+
+  const type = effectiveCategory === 'climate' ? 'climate'
+    : effectiveCategory === 'politics'         ? 'politics'
     : 'co2';
 
-  const activeFilter = category === 'climate'  ? climateFilter
-    : category === 'politics'                   ? politicsFilter
+  const activeFilter = effectiveCategory === 'climate'  ? climateFilter
+    : effectiveCategory === 'politics'                   ? politicsFilter
     : co2Filter;
 
   const rowsByState = useMemo(() => new Map(data?.map(row => [row.stateId, row])), [data]);

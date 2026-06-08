@@ -27,6 +27,7 @@ export default function HomePage() {
 
   const [showTable, setShowTable] = useState(false);
   const [stateAnchor, setStateAnchor] = useState<StateAnchor | null>(null);
+  const [mapCategory, setMapCategory] = useState<'climate' | 'politics' | 'co2'>('climate');
   const prevCat = useRef<Category>(category);
   useEffect(() => {
     if (prevCat.current !== category) {
@@ -48,9 +49,16 @@ export default function HomePage() {
   const goToSection = useCallback((idx: number) => {
     const t = Math.max(0, Math.min(3, idx));
     currentSection.current = t;
+    if (t === 0) {
+      setSelectedStateId(null);
+      setStateAnchor(null);
+      setShowTable(false);
+    } else {
+      setMapCategory(SECTION_CATS[t] as 'climate' | 'politics' | 'co2');
+    }
     setCategory(SECTION_CATS[t]);
     animate(sectionIdx, t, { type: 'tween', duration: 0.28, ease: 'easeOut' });
-  }, [sectionIdx, setCategory]);
+  }, [sectionIdx, setCategory, setSelectedStateId]);
 
   useEffect(() => {
     let locked = false;
@@ -212,6 +220,7 @@ export default function HomePage() {
           >
             <InteractiveMap
               data={climateData}
+              categoryOverride={mapCategory}
               onStateClick={handleStateClick}
               onSelectedStateAnchorChange={handleSelectedStateAnchorChange}
             />
