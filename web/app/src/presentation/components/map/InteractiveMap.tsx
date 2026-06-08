@@ -12,9 +12,10 @@ type MapDataRow = ClimateData | CO2Emission | PoliticalProposal;
 interface InteractiveMapProps {
   data: MapDataRow[];
   onStateClick: (state: string, anchor: StateAnchor) => void;
+  onSelectedStateAnchorChange?: (anchor: StateAnchor) => void;
 }
 
-export function InteractiveMap({ data, onStateClick }: InteractiveMapProps) {
+export function InteractiveMap({ data, onStateClick, onSelectedStateAnchorChange }: InteractiveMapProps) {
   const { selectedStateId, category, climateFilter, politicsFilter, co2Filter } = useAppStore();
 
   const type = category === 'climate' ? 'climate'
@@ -77,6 +78,7 @@ export function InteractiveMap({ data, onStateClick }: InteractiveMapProps) {
         getStateColor={getStateColor}
         selectedStateId={selectedStateId}
         onStateClick={onStateClick}
+        onSelectedStateAnchorChange={onSelectedStateAnchorChange}
       />
     </div>
   );

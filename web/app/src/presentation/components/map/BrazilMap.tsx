@@ -1,5 +1,5 @@
 'use client';
-import React, { memo, useEffect, useRef, useState } from 'react';
+import React, { memo, useCallback, useEffect, useRef, useState } from 'react';
 
 
 type Coord = [number, number];
@@ -74,9 +74,10 @@ export interface BrazilMapProps {
   getStateColor: (uf: string) => string;
   selectedStateId: string | null;
   onStateClick: (uf: string, anchor: StateAnchor) => void;
+  onSelectedStateAnchorChange?: (anchor: StateAnchor) => void;
 }
 
-export const BrazilMap = memo(function BrazilMap({ getStateColor, selectedStateId, onStateClick }: BrazilMapProps) {
+export const BrazilMap = memo(function BrazilMap({ getStateColor, selectedStateId, onStateClick, onSelectedStateAnchorChange }: BrazilMapProps) {
   const svgRef = useRef<SVGSVGElement | null>(null);
   const [states, setStates] = useState<MapState[]>([]);
   const [loading, setLoading]   = useState(true);
@@ -107,7 +108,7 @@ export const BrazilMap = memo(function BrazilMap({ getStateColor, selectedStateI
       .finally(() => setLoading(false));
   }, []);
 
-  const getViewportPoint = (cx: number, cy: number): StateAnchor => {
+  const getViewportPoint = useCallback((cx: number, cy: number): StateAnchor => {
     const svg = svgRef.current;
     if (!svg) return { x: 0, y: 0 };
     const screenMatrix = svg.getScreenCTM();
@@ -119,7 +120,21 @@ export const BrazilMap = memo(function BrazilMap({ getStateColor, selectedStateI
 
     const screenPoint = point.matrixTransform(screenMatrix);
     return { x: screenPoint.x, y: screenPoint.y };
-  };
+  }, []);
+
+  useEffect(() => {
+    if (!selectedStateId || !onSelectedStateAnchorChange) return;
+
+    const selectedState = states.find(state => state.uf === selectedStateId);
+    if (!selectedState) return;
+
+    const timeoutId = window.setTimeout(() => {
+      const [cx, cy] = selectedState.centroid;
+      onSelectedStateAnchorChange(getViewportPoint(cx, cy));
+    }, 420);
+
+    return () => window.clearTimeout(timeoutId);
+  }, [getViewportPoint, selectedStateId, states, onSelectedStateAnchorChange]);
 
   if (loading) {
     return (
@@ -139,6 +154,7 @@ export const BrazilMap = memo(function BrazilMap({ getStateColor, selectedStateI
       className="w-full h-full"
       style={{ willChange: 'transform' }}
       aria-label="Mapa interativo do Brasil"
+      data-skyflora-map="true"
     >
       {states.map(({ uf, d, centroid: [cx, cy] }) => {
         const color    = getStateColor(uf);
@@ -163,7 +179,7 @@ export const BrazilMap = memo(function BrazilMap({ getStateColor, selectedStateI
                 cursor: 'pointer',
                 filter: isHov || isSel ? 'brightness(1.25)' : undefined,
               }}
-              onClick={() => onStateClick(uf, getViewportPoint(labelX, labelY))}
+              onClick={() => onStateClick(uf, getViewportPoint(cx, cy))}
               onMouseEnter={() => setHovered(uf)}
               onMouseLeave={() => setHovered(null)}
             />

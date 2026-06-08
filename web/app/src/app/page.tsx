@@ -93,26 +93,17 @@ export default function HomePage() {
   };
   const handleStateClick = useCallback((stateId: string, anchor: StateAnchor) => {
     setShowTable(false);
-    setStateAnchor(anchor);
+    setStateAnchor(hasFocusedState ? anchor : null);
     setSelectedStateId(stateId);
-  }, [setSelectedStateId]);
+  }, [hasFocusedState, setSelectedStateId]);
 
-  const getFocusedAnchor = () => {
-    if (!stateAnchor) return { x: 690, y: 468 };
+  const handleSelectedStateAnchorChange = useCallback((anchor: StateAnchor) => {
+    setStateAnchor(anchor);
+  }, []);
 
-    const mapHeight = typeof window === 'undefined' ? 732 : window.innerHeight - 72 - 96;
-    const origin = { x: SIDEBAR_OFFSET, y: 72 + mapHeight / 2 };
-    const scale = 0.64;
-
-    return {
-      x: origin.x + (stateAnchor.x - origin.x) * scale - 128,
-      y: origin.y + (stateAnchor.y - origin.y) * scale + 24,
-    };
-  };
-
-  const connectorStart = getFocusedAnchor();
+  const connectorStart = stateAnchor ?? { x: 690, y: 468 };
   const connectorEnd = {
-    x: typeof window === 'undefined' ? 950 : Math.max(900, window.innerWidth - Math.min(window.innerWidth * 0.38, 560) - 44),
+    x: typeof window === 'undefined' ? 950 : Math.max(window.innerWidth * 0.62, window.innerWidth - Math.min(window.innerWidth * 0.38, 560) - 32),
     y: 300,
   };
   const connectorMid = {
@@ -213,17 +204,21 @@ export default function HomePage() {
             transition={{ duration: 0.38, ease: [0.22, 1, 0.36, 1] }}
             style={{ transformOrigin: 'center left', willChange: 'transform' }}
           >
-            <InteractiveMap data={climateData} onStateClick={handleStateClick} />
+            <InteractiveMap
+              data={climateData}
+              onStateClick={handleStateClick}
+              onSelectedStateAnchorChange={handleSelectedStateAnchorChange}
+            />
           </motion.div>
         </motion.div>
 
         <AnimatePresence>
-          {hasFocusedState && (
+          {hasFocusedState && stateAnchor && (
             <motion.svg
               key="state-focus-connector"
               className="fixed inset-0 pointer-events-none z-[120]"
-              viewBox="0 0 1440 900"
-              preserveAspectRatio="none"
+              width="100vw"
+              height="100vh"
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}

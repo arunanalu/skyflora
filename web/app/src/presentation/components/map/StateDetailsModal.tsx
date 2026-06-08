@@ -33,6 +33,7 @@ export function StateDetailsModal({ data = [] }: { data?: DetailRow[] }) {
       const target = event.target;
       if (!(target instanceof Node)) return;
       if (panelRef.current?.contains(target)) return;
+      if (target instanceof Element && target.closest('[data-skyflora-map="true"]')) return;
       setSelectedStateId(null);
     };
 
