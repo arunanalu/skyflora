@@ -87,32 +87,32 @@ export function StateDetailsModal({ data = [], rightOffset = 32 }: { data?: Deta
 
     if (climateFilter === 'atmosfera') {
       return (
-        <div className="grid grid-cols-2 gap-3">
-          <MetricCard label="Particulas finas" value={formatClimateNumber(firstRow.pm25Mean, ' ug/m3')} tone="sky" />
-          <MetricCard label="Particulas inalaveis" value={formatClimateNumber(firstRow.pm10Mean, ' ug/m3')} tone="sky" />
-          <MetricCard label="Monoxido de carbono" value={formatClimateNumber(firstRow.carbonMonoxideMean, ' ug/m3')} />
-          <MetricCard label="Nuvens medias" value={formatClimateNumber(firstRow.cloudCoverageMean, '%')} />
-          <MetricCard label="Precipitacao total" value={formatClimateNumber(firstRow.precipitationTotalMm, ' mm')} tone="sky" wide />
+        <div className="grid grid-cols-2 gap-2 md:gap-3">
+          <MetricCard label="Particulas finas" value={formatClimateNumber(firstRow.pm25Mean, ' ug/m3')} tone="sky" compact={isMobile} />
+          <MetricCard label="Particulas inalaveis" value={formatClimateNumber(firstRow.pm10Mean, ' ug/m3')} tone="sky" compact={isMobile} />
+          <MetricCard label="Monoxido de carbono" value={formatClimateNumber(firstRow.carbonMonoxideMean, ' ug/m3')} compact={isMobile} />
+          <MetricCard label="Nuvens medias" value={formatClimateNumber(firstRow.cloudCoverageMean, '%')} compact={isMobile} />
+          <MetricCard label="Precipitacao total" value={formatClimateNumber(firstRow.precipitationTotalMm, ' mm')} tone="sky" wide compact={isMobile} />
         </div>
       );
     }
 
     if (climateFilter === 'solo') {
       return (
-        <div className="grid grid-cols-2 gap-3">
-          <MetricCard label="Perda de agua" value={formatClimateNumber(firstRow.vegetationWaterLossMean, ' mm/dia')} tone="emerald" />
-          <MetricCard label="Estresse hidrico" value={formatClimateNumber(firstRow.vegetationWaterStressMean, ' kPa')} tone="emerald" />
-          <MetricCard label="Cobertura vegetal" value={formatClimateNumber(firstRow.vegetationCoverIndexMean)} />
-          <MetricCard label="Focos de queimadas" value={formatClimateNumber(firstRow.fireSpotsTotal)} tone="red" />
+        <div className="grid grid-cols-2 gap-2 md:gap-3">
+          <MetricCard label="Perda de agua" value={formatClimateNumber(firstRow.vegetationWaterLossMean, ' mm/dia')} tone="emerald" compact={isMobile} />
+          <MetricCard label="Estresse hidrico" value={formatClimateNumber(firstRow.vegetationWaterStressMean, ' kPa')} tone="emerald" compact={isMobile} />
+          <MetricCard label="Cobertura vegetal" value={formatClimateNumber(firstRow.vegetationCoverIndexMean)} compact={isMobile} />
+          <MetricCard label="Focos de queimadas" value={formatClimateNumber(firstRow.fireSpotsTotal)} tone="red" compact={isMobile} />
         </div>
       );
     }
 
     return (
-      <div className="grid grid-cols-3 gap-3">
-        <MetricCard label="Temp. maxima" value={formatClimateNumber(firstRow.temperatureMax, ' C')} tone="red" />
-        <MetricCard label="Temp. media" value={formatClimateNumber(firstRow.temperature, ' C')} tone="amber" />
-        <MetricCard label="Temp. minima" value={formatClimateNumber(firstRow.temperatureMin, ' C')} tone="blue" />
+      <div className="grid grid-cols-3 gap-2 md:gap-3">
+        <MetricCard label="Temp. maxima" value={formatClimateNumber(firstRow.temperatureMax, ' C')} tone="red" compact={isMobile} />
+        <MetricCard label="Temp. media" value={formatClimateNumber(firstRow.temperature, ' C')} tone="amber" compact={isMobile} />
+        <MetricCard label="Temp. minima" value={formatClimateNumber(firstRow.temperatureMin, ' C')} tone="blue" compact={isMobile} />
       </div>
     );
   };
@@ -356,7 +356,7 @@ export function StateDetailsModal({ data = [], rightOffset = 32 }: { data?: Deta
   );
 }
 
-function MetricCard({ label, value, tone = 'slate', wide = false }: { label: string; value: string; tone?: 'sky' | 'emerald' | 'red' | 'amber' | 'blue' | 'indigo' | 'purple' | 'slate'; wide?: boolean }) {
+function MetricCard({ label, value, tone = 'slate', wide = false, compact = false }: { label: string; value: string; tone?: 'sky' | 'emerald' | 'red' | 'amber' | 'blue' | 'indigo' | 'purple' | 'slate'; wide?: boolean; compact?: boolean }) {
   const tones = {
     sky: 'border-sky-900/40 text-sky-300',
     emerald: 'border-emerald-900/40 text-emerald-300',
@@ -369,9 +369,9 @@ function MetricCard({ label, value, tone = 'slate', wide = false }: { label: str
   };
 
   return (
-    <div className={`rounded-2xl border bg-slate-950/35 p-4 ${tones[tone]}${wide ? ' col-span-2' : ''}`}>
-      <div className="mb-1 text-[10px] font-bold uppercase tracking-widest opacity-90">{label}</div>
-      <div className="font-serif text-2xl text-white">{value}</div>
+    <div className={`rounded-2xl border bg-slate-950/35 ${compact ? 'p-3' : 'p-4'} ${tones[tone]}${wide ? ' col-span-2' : ''}`}>
+      <div className={`${compact ? 'mb-1 text-[8px] tracking-[0.16em]' : 'mb-1 text-[10px] tracking-widest'} font-bold uppercase opacity-90`}>{label}</div>
+      <div className={`font-serif leading-tight text-white ${compact ? 'text-xl' : 'text-2xl'}`}>{value}</div>
     </div>
   );
 }
