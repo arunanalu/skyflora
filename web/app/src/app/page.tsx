@@ -26,7 +26,11 @@ const SECTION_META = {
 
 export default function HomePage() {
   const store = useAppStore();
-  const { category, setCategory, setSelectedStateId, climateDate, co2Date } = store;
+  const { category, setCategory, setSelectedStateId, climateDate, co2Date, municipalDrilldownUf } = store;
+
+  // Ref so the wheel handler always reads the latest value without re-registering
+  const overlayOpenRef = useRef(false);
+  useEffect(() => { overlayOpenRef.current = !!municipalDrilldownUf; }, [municipalDrilldownUf]);
 
   const [showTable, setShowTable] = useState(false);
   const [stateAnchor, setStateAnchor] = useState<StateAnchor | null>(null);
@@ -109,6 +113,7 @@ export default function HomePage() {
   useEffect(() => {
     let locked = false;
     const onWheel = (e: WheelEvent) => {
+      if (overlayOpenRef.current) return;
       if (e.target instanceof Element && e.target.closest('[data-skyflora-scroll-lock="true"]')) {
         return;
       }
