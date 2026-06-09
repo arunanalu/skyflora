@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { createDataRepository } from '../../../data/repositories/createDataRepository';
+import { withCache } from '../../../infrastructure/config/cache';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -30,7 +31,11 @@ export async function GET(request: Request) {
   }
 
   try {
-    const data = await repository.getClimateData(params.month, params.year);
+    const data = await withCache(
+      () => repository.getClimateData(params.month, params.year),
+      ['climate-state', String(params.month), String(params.year)],
+      ['climate-state'],
+    );
     return NextResponse.json(data);
   } catch {
     return NextResponse.json({ error: 'Erro ao buscar dados climaticos' }, { status: 500 });

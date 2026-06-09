@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getClimateDataSource } from '../../../../infrastructure/config/env';
 import { DatabricksClimateMunicipalRepository } from '../../../../data/repositories/DatabricksClimateMunicipalRepository';
 import { getMunicipalClimateDataMock } from '../../../../data/repositories/MockRepository';
+import { withCache } from '../../../../infrastructure/config/cache';
 
 const UF_RE = /^[A-Z]{2}$/;
 const DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
@@ -33,14 +34,16 @@ export async function GET(request: NextRequest) {
   const limit = Math.min(50, Math.max(1, Number.isFinite(limitRaw) ? Math.floor(limitRaw) : 20));
   const offset = Math.max(0, Number.isFinite(offsetRaw) ? Math.floor(offsetRaw) : 0);
 
-  try {
-    if (getClimateDataSource() === 'databricks') {
-      const repo = new DatabricksClimateMunicipalRepository();
-      const data = await repo.getMunicipalClimateData({ uf, date, search, limit, offset });
-      return NextResponse.json(data);
-    }
+  const cacheKeys = ['climate-municipal', uf, date, search, String(limit), String(offset)];
 
-    const data = getMunicipalClimateDataMock({ uf, date, search, limit, offset });
+  try {
+    const data = await withCache(
+      () => getClimateDataSource() === 'databricks'
+        ? new DatabricksClimateMunicipalRepository().getMunicipalClimateData({ uf, date, search, limit, offset })
+        : Promise.resolve(getMunicipalClimateDataMock({ uf, date, search, limit, offset })),
+      cacheKeys,
+      ['climate-municipal', `climate-municipal-${uf}`],
+    );
     return NextResponse.json(data);
   } catch (err) {
     console.error('[/api/climate/municipal]', err);
