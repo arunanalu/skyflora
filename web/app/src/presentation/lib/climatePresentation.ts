@@ -17,11 +17,15 @@ export function getTemperatureStatus(row: ClimatePresentationRow): ClimateStatus
   const max = row.temperatureMax ?? avg;
   const min = row.temperatureMin ?? avg;
 
-  if (avg < 16 || min < 8) return 'cold';
-  if (avg < 20) return 'attention';
-  if (avg <= 26 && max <= 32 && min >= 12) return 'good';
-  if (avg <= 28 && max <= 34) return 'attention';
-  if (avg <= 30 && max <= 37) return 'high';
+  // Calibrado para o clima brasileiro (referência: dezembro 2024)
+  // cold: noites abaixo de 10°C são frias no contexto tropical
+  if (avg < 18 || min < 10) return 'cold';
+  // good: média confortável + máximas não extremas + noite amena
+  if (avg <= 27 && max <= 34 && min >= 12) return 'good';
+  // attention: calor moderado ou máximas ainda controladas
+  if (avg <= 28 && max <= 36) return 'attention';
+  // high: máximas elevadas ou média acima do conforto
+  if (avg <= 30 && max <= 38) return 'high';
   return 'severe';
 }
 
@@ -30,21 +34,30 @@ export function getAtmosphereStatus(row: ClimatePresentationRow): ClimateStatus 
   const pm10 = row.pm10Mean ?? 0;
   const co = row.carbonMonoxideMean ?? 0;
 
-  if (pm25 > 35 || pm10 > 50 || co > 10000) return 'severe';
-  if (pm25 > 25 || pm10 > 35 || co > 4000) return 'high';
-  if (pm25 > 15 || pm10 > 20) return 'attention';
+  // Calibrado para médias estaduais brasileiras (referência: dezembro 2024)
+  // PM2.5 range real: 5.6–15.8 μg/m³; PM10: 7.4–16.2; CO: 112–342 μg/m³
+  // Thresholds baseados na distribuição do dataset, não em limites de crise aguda
+  if (pm25 > 18 || pm10 > 25 || co > 280) return 'severe';
+  if (pm25 > 12 || pm10 > 16 || co > 210) return 'high';
+  if (pm25 > 8  || pm10 > 12 || co > 160) return 'attention';
   return 'good';
 }
 
 export function getSoilStatus(row: ClimatePresentationRow): ClimateStatus {
   const waterLoss = row.vegetationWaterLossMean ?? 0;
   const waterStress = row.vegetationWaterStressMean ?? 0;
-  const vegetation = row.vegetationCoverIndexMean ?? 0.5;
+  // Fallback conservador baseado na mediana real dos estados brasileiros
+  const vegetation = row.vegetationCoverIndexMean ?? 0.28;
   const fireSpots = row.fireSpotsTotal ?? 0;
 
-  if (fireSpots >= 1000 || waterStress >= 1.5 || vegetation < 0.1) return 'severe';
-  if (fireSpots >= 300 || waterLoss >= 5 || waterStress >= 1.07 || vegetation < 0.3) return 'high';
-  if (fireSpots > 0 || waterLoss >= 4 || waterStress >= 0.86 || vegetation < 0.4) return 'attention';
+  // Thresholds calibrados para o clima tropical brasileiro (referência: dezembro 2024)
+  // waterStress: clima tropical tem baseline ~1.3–1.8; acima de 3.0 é sertão/seco severo
+  // waterLoss: evapotranspiração tropical normal é 3.5–5 mm/dia; acima de 6 é muito alto
+  // vegetation: dados reais variam 0.18–0.38 no Brasil; abaixo de 0.20 indica degradação
+  // fireSpots: acima de 1000 focos por estado é crítico
+  if (fireSpots >= 1000 || waterStress >= 3.0 || waterLoss >= 6.0) return 'severe';
+  if (fireSpots >= 300 || waterStress >= 2.5 || waterLoss >= 5.5 || vegetation < 0.20) return 'high';
+  if (fireSpots >= 50 || waterStress >= 2.0 || waterLoss >= 5.0 || vegetation < 0.28) return 'attention';
   return 'good';
 }
 
@@ -53,7 +66,7 @@ export function getTemperatureColor(row: ClimatePresentationRow): string {
 
   if (status === 'cold') return '#2563eb';
   if (status === 'good') return '#22c55e';
-  if (status === 'attention') return (row.temperature ?? 0) < 20 ? '#38bdf8' : '#eab308';
+  if (status === 'attention') return '#eab308';
   if (status === 'high') return '#f97316';
   return '#dc2626';
 }

@@ -66,6 +66,7 @@ export function StateDetailsModal({ data = [], rightOffset = 32 }: { data?: Deta
           <MetricCard label="Particulas inalaveis" value={formatClimateNumber(firstRow.pm10Mean, ' ug/m3')} tone="sky" />
           <MetricCard label="Monoxido de carbono" value={formatClimateNumber(firstRow.carbonMonoxideMean, ' ug/m3')} />
           <MetricCard label="Nuvens medias" value={formatClimateNumber(firstRow.cloudCoverageMean, '%')} />
+          <MetricCard label="Precipitacao total" value={formatClimateNumber(firstRow.precipitationTotalMm, ' mm')} tone="sky" wide />
         </div>
       );
     }
@@ -198,7 +199,7 @@ export function StateDetailsModal({ data = [], rightOffset = 32 }: { data?: Deta
   );
 }
 
-function MetricCard({ label, value, tone = 'slate' }: { label: string; value: string; tone?: 'sky' | 'emerald' | 'red' | 'amber' | 'blue' | 'indigo' | 'purple' | 'slate' }) {
+function MetricCard({ label, value, tone = 'slate', wide = false }: { label: string; value: string; tone?: 'sky' | 'emerald' | 'red' | 'amber' | 'blue' | 'indigo' | 'purple' | 'slate'; wide?: boolean }) {
   const tones = {
     sky: 'border-sky-900/40 text-sky-300',
     emerald: 'border-emerald-900/40 text-emerald-300',
@@ -211,7 +212,7 @@ function MetricCard({ label, value, tone = 'slate' }: { label: string; value: st
   };
 
   return (
-    <div className={`rounded-2xl border bg-slate-950/35 p-4 ${tones[tone]}`}>
+    <div className={`rounded-2xl border bg-slate-950/35 p-4 ${tones[tone]}${wide ? ' col-span-2' : ''}`}>
       <div className="mb-1 text-[10px] font-bold uppercase tracking-widest opacity-90">{label}</div>
       <div className="font-serif text-2xl text-white">{value}</div>
     </div>
