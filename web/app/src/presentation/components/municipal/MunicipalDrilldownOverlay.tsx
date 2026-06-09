@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { X, MapPin } from 'lucide-react';
 import { useAppStore } from '../../stores/useAppStore';
@@ -16,8 +16,27 @@ const STATE_NAMES: Record<string, string> = {
   SE: 'Sergipe', TO: 'Tocantins',
 };
 
+const FILTER_TABS = [
+  { key: 'temperatura', label: 'Temperatura' },
+  { key: 'atmosfera',   label: 'Atmosfera'   },
+  { key: 'solo',        label: 'Solo'         },
+] as const;
+
+type ClimateFilter = typeof FILTER_TABS[number]['key'];
+
 export function MunicipalDrilldownOverlay() {
-  const { municipalDrilldownUf, setMunicipalDrilldownUf } = useAppStore();
+  const { municipalDrilldownUf, setMunicipalDrilldownUf, climateFilter } = useAppStore();
+
+  // Start with whichever filter was active on the map; user can switch within the overlay
+  const [activeFilter, setActiveFilter] = useState<ClimateFilter>('temperatura');
+
+  // Sync filter when overlay opens
+  useEffect(() => {
+    if (municipalDrilldownUf) {
+      const valid = FILTER_TABS.map((t) => t.key);
+      setActiveFilter(valid.includes(climateFilter as ClimateFilter) ? (climateFilter as ClimateFilter) : 'temperatura');
+    }
+  }, [municipalDrilldownUf, climateFilter]);
 
   const close = () => setMunicipalDrilldownUf(null);
 
@@ -39,10 +58,10 @@ export function MunicipalDrilldownOverlay() {
           exit={{ opacity: 0, y: 24 }}
           transition={{ duration: 0.28, ease: [0.22, 1, 0.36, 1] }}
           className="fixed inset-0 z-[300] flex flex-col bg-[#0a1120]/96 backdrop-blur-md"
-          style={{ paddingTop: 60 }} // respects Topbar height
+          style={{ paddingTop: 60 }}
         >
           {/* Header */}
-          <div className="flex items-center gap-4 border-b border-slate-800 px-8 py-5 flex-shrink-0">
+          <div className="flex flex-wrap items-center gap-4 border-b border-slate-800 px-8 py-4 flex-shrink-0">
             <div className="flex items-center gap-3">
               <MapPin className="h-5 w-5 text-emerald-400 flex-shrink-0" />
               <div>
@@ -58,6 +77,24 @@ export function MunicipalDrilldownOverlay() {
               </div>
             </div>
 
+            {/* Filter tabs */}
+            <div className="flex items-center gap-1 rounded-xl border border-slate-700/50 bg-slate-800/40 p-1">
+              {FILTER_TABS.map((tab) => (
+                <button
+                  key={tab.key}
+                  type="button"
+                  onClick={() => setActiveFilter(tab.key)}
+                  className={`rounded-lg px-4 py-1.5 text-xs font-semibold transition-colors cursor-pointer ${
+                    activeFilter === tab.key
+                      ? 'bg-emerald-500/20 text-emerald-300'
+                      : 'text-slate-500 hover:text-slate-300'
+                  }`}
+                >
+                  {tab.label}
+                </button>
+              ))}
+            </div>
+
             <button
               type="button"
               onClick={close}
@@ -68,8 +105,7 @@ export function MunicipalDrilldownOverlay() {
             </button>
           </div>
 
-          {/* Content */}
-          <MunicipalDrilldownContent uf={municipalDrilldownUf} />
+          <MunicipalDrilldownContent uf={municipalDrilldownUf} filter={activeFilter} />
         </motion.div>
       )}
     </AnimatePresence>
