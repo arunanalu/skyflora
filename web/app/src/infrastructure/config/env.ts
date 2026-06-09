@@ -2,6 +2,7 @@ import 'server-only';
 
 export type ClimateDataSource = 'mock' | 'databricks';
 export type CO2DataSource = 'mock' | 'databricks';
+export type PoliticsDataSource = 'mock' | 'databricks';
 
 export interface DatabricksConfig {
   serverHostname: string;
@@ -27,6 +28,14 @@ export function getClimateDataSource(): ClimateDataSource {
 
 export function getCO2DataSource(): CO2DataSource {
   return process.env.CO2_DATA_SOURCE === 'databricks' ? 'databricks' : 'mock';
+}
+
+export function getPoliticsDataSource(): PoliticsDataSource {
+  return process.env.POLITICS_DATA_SOURCE === 'databricks' ? 'databricks' : 'mock';
+}
+
+export function getPoliticsDatabricksTableName(): string {
+  return readRequiredEnv('DATABRICKS_POLITICS_TABLE');
 }
 
 export function getCO2DatabricksTableName(): string {

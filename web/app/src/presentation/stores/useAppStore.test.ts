@@ -11,7 +11,7 @@ describe('useAppStore', () => {
       politicsDate: { month: 12, year: 2024 },
       co2Date: { year: 2024 },
       climateFilter: 'temperatura',
-      politicsFilter: 'prop_beneficas',
+      politicsFilter: 'atividade',
       co2Filter: 'media_emissao',
     });
   });

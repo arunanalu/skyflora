@@ -4,7 +4,7 @@ import { useAppStore } from '../../stores/useAppStore';
 import { BrazilMap, StateAnchor } from './BrazilMap';
 import { ClimateData } from '../../../domain/entities/ClimateData';
 import { CO2Emission } from '../../../domain/entities/CO2Emission';
-import { PoliticalProposal } from '../../../domain/entities/PoliticalProposal';
+import { PoliticsStateData } from '../../../domain/entities/PoliticsStateData';
 import { getAtmosphereColor, getSoilColor, getTemperatureColor } from '../../lib/climatePresentation';
 import {
   computeCO2Maxima,
@@ -12,8 +12,9 @@ import {
   getCO2SectorColor,
   getCO2TotalEmissionColor,
 } from '../../lib/co2Presentation';
+import { getPoliticsStateColor } from '../../lib/politicsPresentation';
 
-type MapDataRow = ClimateData | CO2Emission | PoliticalProposal;
+type MapDataRow = ClimateData | CO2Emission | PoliticsStateData;
 type DataCategory = 'climate' | 'politics' | 'co2';
 
 interface InteractiveMapProps {
@@ -36,7 +37,10 @@ export function InteractiveMap({ data, categoryOverride, onStateClick, onSelecte
     : effectiveCategory === 'politics'                   ? politicsFilter
     : co2Filter;
 
-  const rowsByState = useMemo(() => new Map(data?.map(row => [row.stateId, row])), [data]);
+  const rowsByState = useMemo(() => new Map(data?.map(row => {
+    const key = 'uf' in row ? (row as PoliticsStateData).uf : row.stateId;
+    return [key, row];
+  })), [data]);
 
   // Precompute CO2 ranks/maxima once per dataset change
   const co2Maxima = useMemo(() => {
@@ -57,7 +61,7 @@ export function InteractiveMap({ data, categoryOverride, onStateClick, onSelecte
     }
 
     if (type === 'politics') {
-      return (row as PoliticalProposal).isBeneficial ? '#10b981' : '#ef4444';
+      return getPoliticsStateColor(row as PoliticsStateData, activeFilter);
     }
 
     const co2Row = row as CO2Emission;

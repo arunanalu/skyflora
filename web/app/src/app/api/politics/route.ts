@@ -1,17 +1,22 @@
 import { NextResponse } from 'next/server';
-import { MockRepository } from '../../../data/repositories/MockRepository';
+import { createDataRepository } from '../../../data/repositories/createDataRepository';
 import { withCache } from '../../../infrastructure/config/cache';
 
-const repository = new MockRepository();
+const VALID_PERIODO = /^\d{4}-\d{2}$/;
 
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
-  const stateId = searchParams.get('stateId') || undefined;
+  const periodo = searchParams.get('periodo') ?? '2024-12';
+
+  if (!VALID_PERIODO.test(periodo)) {
+    return NextResponse.json({ error: 'Parametro periodo invalido. Use o formato YYYY-MM.' }, { status: 400 });
+  }
 
   try {
+    const repository = createDataRepository();
     const data = await withCache(
-      () => repository.getPoliticalProposals(stateId),
-      ['politics', stateId ?? 'all'],
+      () => repository.getPoliticsStateData(periodo),
+      ['politics', periodo],
       ['politics'],
     );
     return NextResponse.json(data);

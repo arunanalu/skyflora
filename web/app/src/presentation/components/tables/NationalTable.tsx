@@ -1,8 +1,9 @@
 'use client';
 
+import React from 'react';
 import { ClimateData } from '../../../domain/entities/ClimateData';
 import { CO2Emission } from '../../../domain/entities/CO2Emission';
-import { PoliticalProposal } from '../../../domain/entities/PoliticalProposal';
+import { PoliticsStateData } from '../../../domain/entities/PoliticsStateData';
 import {
   formatClimateNumber,
   getAtmosphereStatus,
@@ -10,8 +11,9 @@ import {
   getTemperatureStatus,
 } from '../../lib/climatePresentation';
 import { formatCO2Emission } from '../../lib/co2Presentation';
+import { formatPoliticsRate, formatDecimal, getPoliticsAtividadeColor, getPoliticsRateColor } from '../../lib/politicsPresentation';
 
-type TableRow = ClimateData | PoliticalProposal | CO2Emission;
+type TableRow = ClimateData | PoliticsStateData | CO2Emission;
 
 interface NationalTableProps {
   data: TableRow[];
@@ -53,19 +55,24 @@ function isClimateRow(row: TableRow): row is ClimateData {
   return 'temperature' in row && 'atmosphereQuality' in row;
 }
 
-function isPoliticsRow(row: TableRow): row is PoliticalProposal {
-  return 'isBeneficial' in row;
+function isPoliticsRow(row: TableRow): row is PoliticsStateData {
+  return 'scoreRate' in row && 'votosDecisivos' in row;
 }
 
 function isCO2Row(row: TableRow): row is CO2Emission {
   return 'totalEmission' in row;
 }
 
+function getStateKey(row: TableRow): string {
+  if (isPoliticsRow(row)) return row.uf;
+  return row.stateId;
+}
+
 function getStateName(row: TableRow): string {
   if (isClimateRow(row) && row.stateName) return row.stateName;
   if (isCO2Row(row) && row.stateName) return row.stateName;
-  if ('title' in row && row.title) return String(row.title);
-  return STATE_NAMES[row.stateId] || row.stateId;
+  const key = getStateKey(row);
+  return STATE_NAMES[key] || key;
 }
 
 // Status dot color for climate rows
@@ -120,10 +127,28 @@ function getColumns(category: string, filter: string): ColDef[] {
   }
 
   if (category === 'politics') {
+    if (filter === 'por_deputado') {
+      return [
+        { header: 'Prop./dep.', value: r => isPoliticsRow(r) && r.totalDeputados > 0 ? formatDecimal(r.propostasPositivas / r.totalDeputados) : '-', width: 'w-24' },
+        { header: 'Prop. pos.',  value: r => isPoliticsRow(r) ? String(r.propostasPositivas) : '-', width: 'w-24' },
+        { header: 'Deputados',  value: r => isPoliticsRow(r) ? String(r.totalDeputados)       : '-', width: 'w-24' },
+        { header: 'Total prop.', value: r => isPoliticsRow(r) ? String(r.totalPropostas)      : '-', width: 'w-24' },
+      ];
+    }
+    if (filter === 'proporcao_positiva') {
+      return [
+        { header: 'Proporção',  value: r => isPoliticsRow(r) && r.totalPropostas > 0 ? formatPoliticsRate(r.propostasPositivas / r.totalPropostas) : '-', width: 'w-24' },
+        { header: 'Prop. pos.', value: r => isPoliticsRow(r) ? String(r.propostasPositivas) : '-', width: 'w-24' },
+        { header: 'Prop. neu.', value: r => isPoliticsRow(r) ? String(r.propostasNeutras)   : '-', width: 'w-24' },
+        { header: 'Total',      value: r => isPoliticsRow(r) ? String(r.totalPropostas)     : '-', width: 'w-20' },
+      ];
+    }
+    // atividade (default)
     return [
-      { header: 'Proposta',  value: r => isPoliticsRow(r) ? (r.title || '-')                               : '-', width: 'flex-1 min-w-0' },
-      { header: 'Status',    value: r => isPoliticsRow(r) ? (r.status || '-')                              : '-', width: 'w-32' },
-      { header: 'Impacto',   value: r => isPoliticsRow(r) ? (r.isBeneficial ? 'Benefica' : 'Malefica')    : '-', width: 'w-24' },
+      { header: 'Prop. pos.',  value: r => isPoliticsRow(r) ? String(r.propostasPositivas) : '-', width: 'w-24' },
+      { header: 'Prop. neu.',  value: r => isPoliticsRow(r) ? String(r.propostasNeutras)   : '-', width: 'w-24' },
+      { header: 'Deputados',   value: r => isPoliticsRow(r) ? String(r.totalDeputados)     : '-', width: 'w-24' },
+      { header: 'Total votos', value: r => isPoliticsRow(r) ? String(r.totalVotos)         : '-', width: 'w-24' },
     ];
   }
 
@@ -139,9 +164,20 @@ function getColumns(category: string, filter: string): ColDef[] {
   ];
 }
 
-function getPoliticsImpactClass(row: TableRow): string {
-  if (!isPoliticsRow(row)) return 'text-slate-300';
-  return row.isBeneficial ? 'text-emerald-400 font-bold' : 'text-red-400 font-bold';
+function getPoliticsColorStyle(row: TableRow, col: ColDef, filter: string): React.CSSProperties {
+  if (!isPoliticsRow(row)) return {};
+  if (filter === 'atividade' && col.header === 'Prop. pos.') {
+    return { color: getPoliticsAtividadeColor(row.propostasPositivas) };
+  }
+  if (filter === 'por_deputado' && col.header === 'Prop./dep.') {
+    const perDep = row.totalDeputados > 0 ? row.propostasPositivas / row.totalDeputados : 0;
+    return { color: getPoliticsAtividadeColor(Math.round(perDep)) };
+  }
+  if (filter === 'proporcao_positiva' && col.header === 'Proporção') {
+    const rate = row.totalPropostas > 0 ? row.propostasPositivas / row.totalPropostas : 0;
+    return { color: getPoliticsRateColor(rate) };
+  }
+  return {};
 }
 
 export function NationalTable({ data, category, activeFilter }: NationalTableProps) {
@@ -177,7 +213,7 @@ export function NationalTable({ data, category, activeFilter }: NationalTablePro
           const stateName = getStateName(row);
           return (
             <div
-              key={`${row.stateId}-${i}`}
+              key={`${getStateKey(row)}-${i}`}
               className="flex items-center gap-3 rounded-xl border border-transparent bg-slate-800/20 px-4 py-3 transition-colors hover:border-slate-700/50 hover:bg-slate-800/50"
             >
               <span className="w-6 flex-shrink-0 text-center font-serif text-sm text-slate-500">{i + 1}</span>
@@ -192,11 +228,12 @@ export function NationalTable({ data, category, activeFilter }: NationalTablePro
 
               {cols.map((col, j) => {
                 const val = col.value(row);
-                const isImpactCol = category === 'politics' && col.header === 'Impacto';
+                const politicsStyle = category === 'politics' ? getPoliticsColorStyle(row, col, activeFilter) : {};
                 return (
                   <span
                     key={j}
-                    className={`flex-shrink-0 text-right text-sm tabular-nums ${col.width} ${isImpactCol ? getPoliticsImpactClass(row) : 'text-slate-200'}`}
+                    className={`flex-shrink-0 text-right text-sm tabular-nums font-semibold ${col.width} text-slate-200`}
+                    style={politicsStyle}
                     title={val}
                   >
                     {val}

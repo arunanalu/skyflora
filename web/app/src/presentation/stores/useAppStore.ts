@@ -4,6 +4,7 @@ export type Category = 'hero' | 'climate' | 'politics' | 'co2';
 
 export const AVAILABLE_CLIMATE_DATE = { month: 12, year: 2024 } as const;
 export const AVAILABLE_CO2_DATE = { year: 2024 } as const;
+export const AVAILABLE_POLITICS_PERIODO = '2024-12' as const;
 
 export interface AppState {
   category: Category;
@@ -41,7 +42,7 @@ export const useAppStore = create<AppState>((set) => ({
   co2Date: { year: 2024 },
 
   climateFilter: 'temperatura',
-  politicsFilter: 'prop_beneficas',
+  politicsFilter: 'atividade',
   co2Filter: 'emissao_total',
 
   setCategory: (category) => set({ category }),

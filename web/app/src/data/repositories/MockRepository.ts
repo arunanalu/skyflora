@@ -1,7 +1,7 @@
 import { IDataRepository } from '../../domain/repositories/IDataRepository';
 import { ClimateData } from '../../domain/entities/ClimateData';
-import { PoliticalProposal } from '../../domain/entities/PoliticalProposal';
 import { CO2Emission } from '../../domain/entities/CO2Emission';
+import { PoliticsStateData } from '../../domain/entities/PoliticsStateData';
 import { MunicipalClimateData } from '../../domain/entities/MunicipalClimateData';
 import { MunicipalQueryParams } from './DatabricksClimateMunicipalRepository';
 
@@ -56,44 +56,14 @@ export class MockRepository implements IDataRepository {
     ];
   }
 
-  async getPoliticalProposals(stateId?: string): Promise<PoliticalProposal[]> {
-    const proposals: PoliticalProposal[] = [
-      {
-        id: '1',
-        title: 'PL Preservação da Amazônia',
-        description: 'Projeto de lei para aumentar a área de preservação.',
-        author: 'Deputado A',
-        stateId: 'AM',
-        isBeneficial: true,
-        status: 'Aprovada',
-        date: '2026-01-15T00:00:00.000Z'
-      },
-      {
-        id: '2',
-        title: 'PL Expansão Agrícola',
-        description: 'Projeto que flexibiliza desmatamento para agricultura.',
-        author: 'Deputado B',
-        stateId: 'MT',
-        isBeneficial: false,
-        status: 'Em Tramitação',
-        date: '2026-03-10T00:00:00.000Z'
-      },
-      {
-        id: '3',
-        title: 'PL Incentivo à Energia Solar',
-        description: 'Subsídios para instalação de painéis solares.',
-        author: 'Deputado C',
-        stateId: 'SP',
-        isBeneficial: true,
-        status: 'Aprovada',
-        date: '2026-04-20T00:00:00.000Z'
-      }
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  async getPoliticsStateData(_periodoReferencia: string): Promise<PoliticsStateData[]> {
+    return [
+      { uf: 'AM', totalPropostas: 82, propostasPositivas: 70, propostasNegativas: 0, propostasNeutras: 12, totalDeputados: 4, totalVotos: 320, votosDecisivos: 12, votosNaoConclusivos: 308, simEmPositivas: 10, naoEmPositivas: 2, inconclusivosEmPositivas: 280, simEmNegativas: 0, naoEmNegativas: 0, inconclusivosEmNegativas: 0, scoreTotal: 10, scoreRate: 0.83, topDeputados: [{ nome: 'Amom Mandel', partido: 'REPUBLICANOS', score: 0, totalVotos: 0, scoreRate: 0 }], bottomDeputados: [], periodoReferencia: '2024-12', processedAt: null },
+      { uf: 'SP', totalPropostas: 8, propostasPositivas: 6, propostasNegativas: 0, propostasNeutras: 2, totalDeputados: 3, totalVotos: 24, votosDecisivos: 3, votosNaoConclusivos: 21, simEmPositivas: 1, naoEmPositivas: 2, inconclusivosEmPositivas: 18, simEmNegativas: 0, naoEmNegativas: 0, inconclusivosEmNegativas: 0, scoreTotal: 1, scoreRate: 0.33, topDeputados: [], bottomDeputados: [], periodoReferencia: '2024-12', processedAt: null },
+      { uf: 'MG', totalPropostas: 4, propostasPositivas: 3, propostasNegativas: 0, propostasNeutras: 1, totalDeputados: 2, totalVotos: 8, votosDecisivos: 2, votosNaoConclusivos: 6, simEmPositivas: 2, naoEmPositivas: 0, inconclusivosEmPositivas: 6, simEmNegativas: 0, naoEmNegativas: 0, inconclusivosEmNegativas: 0, scoreTotal: 2, scoreRate: 1, topDeputados: [], bottomDeputados: [], periodoReferencia: '2024-12', processedAt: null },
+      { uf: 'RS', totalPropostas: 3, propostasPositivas: 2, propostasNegativas: 0, propostasNeutras: 1, totalDeputados: 2, totalVotos: 6, votosDecisivos: 1, votosNaoConclusivos: 5, simEmPositivas: 0, naoEmPositivas: 1, inconclusivosEmPositivas: 5, simEmNegativas: 0, naoEmNegativas: 0, inconclusivosEmNegativas: 0, scoreTotal: 0, scoreRate: 0, topDeputados: [], bottomDeputados: [], periodoReferencia: '2024-12', processedAt: null },
     ];
-
-    if (stateId) {
-      return proposals.filter(p => p.stateId === stateId);
-    }
-    return proposals;
   }
 
   async getCO2Emissions(year: number): Promise<CO2Emission[]> {

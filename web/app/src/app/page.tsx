@@ -9,8 +9,9 @@ import { StateDetailsModal } from '../presentation/components/map/StateDetailsMo
 import { MunicipalDrilldownOverlay } from '../presentation/components/municipal/MunicipalDrilldownOverlay';
 import { Sidebar } from '../presentation/components/sidebar/Sidebar';
 import { ClimateData } from '../domain/entities/ClimateData';
-import { PoliticalProposal } from '../domain/entities/PoliticalProposal';
+import { PoliticsStateData } from '../domain/entities/PoliticsStateData';
 import { CO2Emission } from '../domain/entities/CO2Emission';
+import { AVAILABLE_POLITICS_PERIODO } from '../presentation/stores/useAppStore';
 
 const SIDEBAR_OFFSET = 308;
 const SCROLL_LOCK_MS = 300;
@@ -48,7 +49,9 @@ export default function HomePage() {
   }, [category]);
 
   const [climateData, setClimateData] = useState<ClimateData[]>([]);
-  const [politicsData, setPoliticsData] = useState<PoliticalProposal[]>([]);
+  const [politicsData, setPoliticsData] = useState<PoliticsStateData[]>([]);
+  const [politicsLoading, setPoliticsLoading] = useState(false);
+  const [politicsError, setPoliticsError] = useState<string | null>(null);
   const [co2Data, setCo2Data] = useState<CO2Emission[]>([]);
 
   useEffect(() => {
@@ -84,9 +87,29 @@ export default function HomePage() {
   }, [climateDate.month, climateDate.year]);
 
   useEffect(() => {
-    fetch('/api/politics')
-      .then((response) => response.json())
-      .then((data) => { if (!data.error) setPoliticsData(data); });
+    const controller = new AbortController();
+
+    Promise.resolve().then(() => {
+      if (!controller.signal.aborted) {
+        setPoliticsLoading(true);
+        setPoliticsError(null);
+      }
+    });
+
+    fetch(`/api/politics?periodo=${AVAILABLE_POLITICS_PERIODO}`, { signal: controller.signal })
+      .then((response) => {
+        if (!response.ok) throw new Error('Erro ao buscar dados politicos');
+        return response.json();
+      })
+      .then((data) => { if (!data.error) setPoliticsData(data); })
+      .catch((error) => {
+        if (error.name !== 'AbortError') {
+          setPoliticsError('Nao foi possivel carregar os dados politicos.');
+        }
+      })
+      .finally(() => { if (!controller.signal.aborted) setPoliticsLoading(false); });
+
+    return () => controller.abort();
   }, []);
 
   useEffect(() => {
@@ -402,6 +425,15 @@ export default function HomePage() {
             style={{ right: 32, top: 128 }}
           >
             {co2Loading ? 'Carregando CO₂...' : co2Error}
+          </div>
+        )}
+
+        {category === 'politics' && !hasFocusedState && (politicsLoading || politicsError) && (
+          <div
+            className="fixed z-[20] rounded-xl border border-white/10 bg-slate-950/80 px-4 py-2 text-xs font-semibold text-slate-300 backdrop-blur-md"
+            style={{ right: 32, top: 128 }}
+          >
+            {politicsLoading ? 'Carregando dados politicos...' : politicsError}
           </div>
         )}
 

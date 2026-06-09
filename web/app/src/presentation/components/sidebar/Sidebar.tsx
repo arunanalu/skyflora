@@ -1,5 +1,6 @@
 'use client';
 import { useAppStore } from '../../stores/useAppStore';
+import { POLITICS_FILTERS } from '../../lib/politicsPresentation';
 
 export function Sidebar() {
   const store = useAppStore();
@@ -63,34 +64,53 @@ export function Sidebar() {
 
         {category === 'politics' && (
           <>
-            <div className="flex flex-col gap-3">
-              <button className="flex items-center justify-between text-sm text-slate-200 hover:text-white transition-colors w-full text-left font-semibold">
+            {POLITICS_FILTERS.map((f) => (
+              <button
+                key={f.id}
+                type="button"
+                className={`flex items-center justify-between text-sm hover:text-white transition-colors w-full text-left font-semibold p-3 rounded-lg border ${currentFilter === f.id ? 'bg-white/10 border-white/5 text-slate-200' : 'border-transparent text-slate-400'}`}
+                onClick={() => setFilter(f.id)}
+              >
                 <span className="flex items-center gap-2">
-                  <span className="text-slate-400">📜</span> Propostas
+                  <span>{f.emoji}</span> {f.label}
                 </span>
-                <span className="text-slate-500 text-xs">▲</span>
               </button>
-              
-              <div className="flex flex-col gap-1 ml-6 mb-2">
-                <label className="flex items-center gap-3 text-xs text-slate-300 cursor-pointer p-2 rounded-lg transition-colors hover:bg-white/5" onClick={() => setFilter('prop_beneficas')}>
-                  <div className={`w-3 h-3 rounded-full ${currentFilter === 'prop_beneficas' ? 'bg-emerald-400 ring-2 ring-emerald-400/30' : 'border border-slate-600'}`}></div>
-                  <span className={currentFilter === 'prop_beneficas' ? 'text-white font-medium' : ''}>Benéficas</span>
-                </label>
-                <label className="flex items-center gap-3 text-xs text-slate-300 cursor-pointer p-2 rounded-lg transition-colors hover:bg-white/5" onClick={() => setFilter('prop_maleficas')}>
-                  <div className={`w-3 h-3 rounded-full ${currentFilter === 'prop_maleficas' ? 'bg-red-400 ring-2 ring-red-400/30' : 'border border-slate-600'}`}></div>
-                  <span className={currentFilter === 'prop_maleficas' ? 'text-white font-medium' : ''}>Maléficas</span>
-                </label>
-              </div>
+            ))}
+
+            <div className="mt-3 flex flex-col gap-1.5 ml-1">
+              <div className="text-[10px] font-bold uppercase tracking-widest text-slate-500 mb-1">Legenda</div>
+              {currentFilter === 'atividade' || currentFilter === 'por_deputado' ? (
+                <>
+                  {[
+                    { color: '#60a5fa', label: '> 30 propostas' },
+                    { color: '#3b82f6', label: '11 – 30' },
+                    { color: '#1d4ed8', label: '4 – 10' },
+                    { color: '#1e3a8a', label: '1 – 3' },
+                    { color: '#374151', label: 'Nenhuma' },
+                  ].map(({ color, label }) => (
+                    <div key={label} className="flex items-center gap-2 text-xs text-slate-400">
+                      <span className="inline-block h-2.5 w-2.5 rounded-full flex-shrink-0" style={{ backgroundColor: color }} />
+                      {label}
+                    </div>
+                  ))}
+                </>
+              ) : (
+                <>
+                  {[
+                    { color: '#16a34a', label: '≥ 70% positivas' },
+                    { color: '#ca8a04', label: '≥ 40%' },
+                    { color: '#ea580c', label: '≥ 10%' },
+                    { color: '#991b1b', label: '< 10%' },
+                    { color: '#374151', label: 'Sem propostas' },
+                  ].map(({ color, label }) => (
+                    <div key={label} className="flex items-center gap-2 text-xs text-slate-400">
+                      <span className="inline-block h-2.5 w-2.5 rounded-full flex-shrink-0" style={{ backgroundColor: color }} />
+                      {label}
+                    </div>
+                  ))}
+                </>
+              )}
             </div>
-
-            <div className="h-px w-full bg-slate-800"></div>
-
-            <button type="button" className="flex items-center justify-between text-sm text-slate-400 hover:text-white transition-colors w-full text-left font-semibold" onClick={() => setFilter('prop_aprovadas')}>
-              <span className="flex items-center gap-2">
-                <span>✅</span> Propostas Aprovadas
-              </span>
-              <div className={`w-2 h-2 rounded-full ${currentFilter === 'prop_aprovadas' ? 'bg-emerald-400' : 'bg-transparent'}`}></div>
-            </button>
           </>
         )}
 

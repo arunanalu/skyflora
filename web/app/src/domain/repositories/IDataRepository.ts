@@ -1,9 +1,9 @@
 import { ClimateData } from '../entities/ClimateData';
-import { PoliticalProposal } from '../entities/PoliticalProposal';
 import { CO2Emission } from '../entities/CO2Emission';
+import { PoliticsStateData } from '../entities/PoliticsStateData';
 
 export interface IDataRepository {
   getClimateData(month: number, year: number): Promise<ClimateData[]>;
-  getPoliticalProposals(stateId?: string): Promise<PoliticalProposal[]>;
+  getPoliticsStateData(periodoReferencia: string): Promise<PoliticsStateData[]>;
   getCO2Emissions(year: number): Promise<CO2Emission[]>;
 }

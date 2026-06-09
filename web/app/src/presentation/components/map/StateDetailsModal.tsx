@@ -7,16 +7,18 @@ import { useAppStore } from '../../stores/useAppStore';
 import { formatClimateNumber, getClimateSummary } from '../../lib/climatePresentation';
 import { formatCO2Emission, getCO2SectorColor } from '../../lib/co2Presentation';
 import { getCO2CategoryExplanation } from '../../lib/co2Explanations';
+import { formatPoliticsRate, formatDecimal, getPoliticsSummary } from '../../lib/politicsPresentation';
 import { CO2CategoryEntry, CO2Sector } from '../../../domain/entities/CO2Emission';
+import { PoliticsStateData } from '../../../domain/entities/PoliticsStateData';
 
 type DetailRow = {
   // shared
   id?: string;
   stateId?: string;
+  uf?: string;
   // climate
   title?: string;
   status?: string;
-  isBeneficial?: boolean;
   temperature?: number;
   temperatureMin?: number | null;
   temperatureMax?: number | null;
@@ -31,6 +33,20 @@ type DetailRow = {
   vegetationCoverIndexMean?: number | null;
   precipitationTotalMm?: number | null;
   fireSpotsTotal?: number | null;
+  // politics
+  scoreRate?: number;
+  scoreTotal?: number;
+  votosDecisivos?: number;
+  simEmPositivas?: number;
+  naoEmPositivas?: number;
+  inconclusivosEmPositivas?: number;
+  propostasPositivas?: number;
+  propostasNeutras?: number;
+  totalDeputados?: number;
+  totalVotos?: number;
+  topDeputados?: PoliticsStateData['topDeputados'];
+  bottomDeputados?: PoliticsStateData['bottomDeputados'];
+  periodoReferencia?: string;
   // co2 (new rich contract)
   stateName?: string;
   totalEmission?: number;
@@ -41,10 +57,10 @@ type DetailRow = {
 
 export function StateDetailsModal({ data = [], rightOffset = 32 }: { data?: DetailRow[]; rightOffset?: number }) {
   const panelRef = useRef<HTMLElement | null>(null);
-  const { selectedStateId, setSelectedStateId, setMunicipalDrilldownUf, category, climateFilter } = useAppStore();
+  const { selectedStateId, setSelectedStateId, setMunicipalDrilldownUf, category, climateFilter, politicsFilter } = useAppStore();
 
   const close = () => setSelectedStateId(null);
-  const stateData = data.filter((d) => d.stateId === selectedStateId);
+  const stateData = data.filter((d) => (d.stateId ?? d.uf) === selectedStateId);
   const firstRow = stateData[0] || {};
 
   useEffect(() => {
@@ -100,21 +116,47 @@ export function StateDetailsModal({ data = [], rightOffset = 32 }: { data?: Deta
   };
 
   const renderPoliticsContent = () => {
-    if (stateData.length === 0) return <div className="text-slate-500">Sem propostas para este estado.</div>;
+    if (firstRow.scoreRate === undefined) {
+      return <div className="text-slate-500">Sem dados para este estado.</div>;
+    }
 
+    const politicsRow = firstRow as PoliticsStateData & { stateId?: string };
+    const perDeputy = (politicsRow.totalDeputados ?? 0) > 0
+      ? formatDecimal((politicsRow.propostasPositivas ?? 0) / (politicsRow.totalDeputados ?? 1))
+      : '0';
+    const proporcao = (politicsRow.totalPropostas ?? 0) > 0
+      ? formatPoliticsRate((politicsRow.propostasPositivas ?? 0) / (politicsRow.totalPropostas ?? 1))
+      : 'N/D';
+
+    if (politicsFilter === 'por_deputado') {
+      return (
+        <div className="grid grid-cols-2 gap-3">
+          <MetricCard label="Prop. positivas / dep." value={perDeputy}                                    tone="emerald" />
+          <MetricCard label="Deputados no período"   value={String(politicsRow.totalDeputados ?? 0)}       tone="sky" />
+          <MetricCard label="Propostas positivas"    value={String(politicsRow.propostasPositivas ?? 0)}   tone="emerald" />
+          <MetricCard label="Total propostas"        value={String(politicsRow.totalPropostas ?? 0)} />
+        </div>
+      );
+    }
+
+    if (politicsFilter === 'proporcao_positiva') {
+      return (
+        <div className="grid grid-cols-2 gap-3">
+          <MetricCard label="Proporção positiva"  value={proporcao}                                       tone="emerald" />
+          <MetricCard label="Propostas positivas" value={String(politicsRow.propostasPositivas ?? 0)}     tone="emerald" />
+          <MetricCard label="Propostas neutras"   value={String(politicsRow.propostasNeutras ?? 0)} />
+          <MetricCard label="Total propostas"     value={String(politicsRow.totalPropostas ?? 0)}         tone="sky" />
+        </div>
+      );
+    }
+
+    // atividade (default)
     return (
-      <div className="flex flex-col gap-3 max-h-44 overflow-y-auto pr-2">
-        {stateData.map((prop, index) => (
-          <div key={prop.id || `prop-${index}`} className="bg-slate-950/35 p-3 rounded-2xl border border-slate-700/50 flex justify-between items-center gap-4">
-            <div>
-              <div className="text-sm font-bold text-slate-200">{prop.title}</div>
-              <div className="text-xs text-slate-500">{prop.status}</div>
-            </div>
-            <div className={`text-xs font-bold px-2 py-1 rounded-md ${prop.isBeneficial ? 'bg-emerald-500/20 text-emerald-400' : 'bg-red-500/20 text-red-400'}`}>
-              {prop.isBeneficial ? 'Benefica' : 'Malefica'}
-            </div>
-          </div>
-        ))}
+      <div className="grid grid-cols-2 gap-3">
+        <MetricCard label="Propostas positivas"  value={String(politicsRow.propostasPositivas ?? 0)} tone="emerald" />
+        <MetricCard label="Propostas neutras"    value={String(politicsRow.propostasNeutras ?? 0)} />
+        <MetricCard label="Deputados no período" value={String(politicsRow.totalDeputados ?? 0)}    tone="sky" />
+        <MetricCard label="Total de votos"       value={String(politicsRow.totalVotos ?? 0)} />
       </div>
     );
   };
@@ -206,6 +248,10 @@ export function StateDetailsModal({ data = [], rightOffset = 32 }: { data?: Deta
     ? getClimateSummary(firstRow, climateFilter)
     : null;
 
+  const politicsSummary = category === 'politics' && firstRow.scoreRate !== undefined
+    ? getPoliticsSummary(firstRow as PoliticsStateData, politicsFilter)
+    : null;
+
   return (
     <AnimatePresence>
       {selectedStateId && (
@@ -244,8 +290,8 @@ export function StateDetailsModal({ data = [], rightOffset = 32 }: { data?: Deta
                 </div>
               </div>
 
-              <div className={`mb-5 rounded-3xl border border-slate-700/55 bg-slate-950/28 p-5 ${category === 'co2' ? 'overflow-y-auto max-h-[calc(100vh-22rem)]' : ''}`}>
-                {category !== 'co2' && (
+              <div className={`mb-5 rounded-3xl border border-slate-700/55 bg-slate-950/28 p-5 ${category === 'co2' || category === 'politics' ? 'overflow-y-auto max-h-[calc(100vh-22rem)]' : ''}`}>
+                {category !== 'co2' && category !== 'politics' && (
                   <>
                     <h3 className="mb-2 text-lg font-semibold text-white">
                       {climateSummary?.title ?? 'Dados consolidados'}
@@ -253,6 +299,12 @@ export function StateDetailsModal({ data = [], rightOffset = 32 }: { data?: Deta
                     <p className="mb-4 text-sm leading-relaxed text-slate-400">
                       {climateSummary?.description ?? 'Um recorte do estado selecionado para comparar indicadores ambientais, pressoes politicas e sinais de emissao com mais contexto.'}
                     </p>
+                  </>
+                )}
+                {category === 'politics' && politicsSummary && (
+                  <>
+                    <h3 className="mb-2 text-lg font-semibold text-white">{politicsSummary.title}</h3>
+                    <p className="mb-4 text-sm leading-relaxed text-slate-400">{politicsSummary.description}</p>
                   </>
                 )}
                 {category === 'climate' && renderClimateContent()}
