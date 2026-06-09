@@ -7,14 +7,14 @@ Para a integracao com Databricks funcionar online do mesmo jeito que localmente,
 Configure em **Project Settings > Environment Variables**:
 
 ```env
-DATABRICKS_SERVER_HOSTNAME=dbc-04286ca6-02ee.cloud.databricks.com
-DATABRICKS_HTTP_PATH=/sql/1.0/warehouses/f81d1bc903b87d84
+DATABRICKS_SERVER_HOSTNAME=<databricks-workspace-hostname>
+DATABRICKS_HTTP_PATH=<databricks-sql-warehouse-http-path>
 DATABRICKS_TOKEN=<token-databricks>
-DATABRICKS_CLIMATE_STATE_TABLE=skyflora.silver.clima_brasil_estado_dez2024
+DATABRICKS_CLIMATE_STATE_TABLE=<catalog.schema.table>
 CLIMATE_DATA_SOURCE=databricks
 ```
 
-Use os mesmos valores em Production, Preview e Development se todos os ambientes puderem consultar o mesmo warehouse.
+Use os valores reais apenas no painel da Vercel ou em `.env.local`. Nao coloque hostname, HTTP path, token, JDBC string ou nome de tabela real em arquivos versionados.
 
 ## Observacoes importantes
 
