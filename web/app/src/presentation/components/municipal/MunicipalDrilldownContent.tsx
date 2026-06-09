@@ -18,7 +18,7 @@ export function MunicipalDrilldownContent({ uf, filter }: MunicipalDrilldownCont
   const [search, setSearch] = useState('');
   const [offset, setOffset] = useState(0);
   const [rows, setRows] = useState<MunicipalClimateData[]>([]);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
   const [hasMore, setHasMore] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const abortRef = useRef<AbortController | null>(null);
