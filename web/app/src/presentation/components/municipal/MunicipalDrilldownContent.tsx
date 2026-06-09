@@ -42,15 +42,16 @@ export function MunicipalDrilldownContent({ uf, filter }: MunicipalDrilldownCont
       if (!res.ok) {
         const body = await res.json().catch(() => ({}));
         setError(body?.error ?? `Erro ${res.status} ao buscar dados.`);
+        setLoading(false);
         return;
       }
       const data: MunicipalClimateData[] = await res.json();
       setRows((prev) => append ? [...prev, ...data] : data);
       setHasMore(data.length === LIMIT);
+      setLoading(false);
     } catch (err: unknown) {
       if (err instanceof Error && err.name === 'AbortError') return;
       setError('Falha na conexão ao buscar dados municipais.');
-    } finally {
       setLoading(false);
     }
   };
