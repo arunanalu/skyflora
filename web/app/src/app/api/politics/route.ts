@@ -10,7 +10,7 @@ export async function GET(request: Request) {
   try {
     const data = await repository.getPoliticalProposals(stateId);
     return NextResponse.json(data);
-  } catch (error) {
-    return NextResponse.json({ error: 'Erro ao buscar dados políticos' }, { status: 500 });
+  } catch {
+    return NextResponse.json({ error: 'Erro ao buscar dados politicos' }, { status: 500 });
   }
 }

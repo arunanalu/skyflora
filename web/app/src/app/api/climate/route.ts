@@ -1,17 +1,38 @@
 import { NextResponse } from 'next/server';
-import { MockRepository } from '../../../data/repositories/MockRepository';
+import { createDataRepository } from '../../../data/repositories/createDataRepository';
 
-const repository = new MockRepository();
+export const runtime = 'nodejs';
+export const dynamic = 'force-dynamic';
+
+const repository = createDataRepository();
+
+function parseClimateParams(request: Request): { month: number; year: number } | { error: string } {
+  const { searchParams } = new URL(request.url);
+  const month = Number(searchParams.get('month') || '12');
+  const year = Number(searchParams.get('year') || '2024');
+
+  if (!Number.isInteger(month) || month < 1 || month > 12) {
+    return { error: 'Parametro month invalido' };
+  }
+
+  if (!Number.isInteger(year) || year < 1900 || year > 2200) {
+    return { error: 'Parametro year invalido' };
+  }
+
+  return { month, year };
+}
 
 export async function GET(request: Request) {
-  const { searchParams } = new URL(request.url);
-  const month = parseInt(searchParams.get('month') || '1', 10);
-  const year = parseInt(searchParams.get('year') || '2026', 10);
+  const params = parseClimateParams(request);
+
+  if ('error' in params) {
+    return NextResponse.json({ error: params.error }, { status: 400 });
+  }
 
   try {
-    const data = await repository.getClimateData(month, year);
+    const data = await repository.getClimateData(params.month, params.year);
     return NextResponse.json(data);
-  } catch (error) {
-    return NextResponse.json({ error: 'Erro ao buscar dados climáticos' }, { status: 500 });
+  } catch {
+    return NextResponse.json({ error: 'Erro ao buscar dados climaticos' }, { status: 500 });
   }
 }

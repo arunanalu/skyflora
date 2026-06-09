@@ -9,10 +9,11 @@ export function Timeline() {
 
   if (category === 'hero') return null;
 
+  const noopSetter = () => undefined;
   let month = 12;
   let year = 2024;
-  let setMonth = (m: number) => {};
-  let setYear = (y: number) => {};
+  let setMonth: (month: number) => void = noopSetter;
+  let setYear: (year: number) => void = noopSetter;
 
   if (category === 'climate') {
     month = store.climateDate.month;

@@ -10,7 +10,7 @@ export async function GET(request: Request) {
   try {
     const data = await repository.getCO2Emissions(year);
     return NextResponse.json(data);
-  } catch (error) {
-    return NextResponse.json({ error: 'Erro ao buscar dados de emissão de CO2' }, { status: 500 });
+  } catch {
+    return NextResponse.json({ error: 'Erro ao buscar dados de emissao de CO2' }, { status: 500 });
   }
 }

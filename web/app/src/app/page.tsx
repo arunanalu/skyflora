@@ -8,6 +8,8 @@ import { NationalTable } from '../presentation/components/tables/NationalTable';
 import { StateDetailsModal } from '../presentation/components/map/StateDetailsModal';
 import { Sidebar } from '../presentation/components/sidebar/Sidebar';
 import { ClimateData } from '../domain/entities/ClimateData';
+import { PoliticalProposal } from '../domain/entities/PoliticalProposal';
+import { CO2Emission } from '../domain/entities/CO2Emission';
 
 const SIDEBAR_OFFSET = 308;
 const SCROLL_LOCK_MS = 300;
@@ -23,11 +25,13 @@ const SECTION_META = {
 
 export default function HomePage() {
   const store = useAppStore();
-  const { category, setCategory, setSelectedStateId } = store;
+  const { category, setCategory, setSelectedStateId, climateDate, co2Date } = store;
 
   const [showTable, setShowTable] = useState(false);
   const [stateAnchor, setStateAnchor] = useState<StateAnchor | null>(null);
   const [mapCategory, setMapCategory] = useState<'climate' | 'politics' | 'co2'>('climate');
+  const [climateLoading, setClimateLoading] = useState(false);
+  const [climateError, setClimateError] = useState<string | null>(null);
   const prevCat = useRef<Category>(category);
   useEffect(() => {
     if (prevCat.current !== category) {
@@ -37,11 +41,52 @@ export default function HomePage() {
   }, [category]);
 
   const [climateData, setClimateData] = useState<ClimateData[]>([]);
+  const [politicsData, setPoliticsData] = useState<PoliticalProposal[]>([]);
+  const [co2Data, setCo2Data] = useState<CO2Emission[]>([]);
+
   useEffect(() => {
-    fetch('/api/climate?month=12&year=2024')
-      .then(r => r.json())
-      .then(d => { if (!d.error) setClimateData(d); });
+    const controller = new AbortController();
+
+    Promise.resolve().then(() => {
+      if (!controller.signal.aborted) {
+        setClimateLoading(true);
+        setClimateError(null);
+      }
+    });
+
+    fetch(`/api/climate?month=${climateDate.month}&year=${climateDate.year}`, {
+      signal: controller.signal,
+    })
+      .then((response) => {
+        if (!response.ok) throw new Error('Erro ao buscar dados climaticos');
+        return response.json();
+      })
+      .then((data) => {
+        if (!data.error) setClimateData(data);
+      })
+      .catch((error) => {
+        if (error.name !== 'AbortError') {
+          setClimateError('Nao foi possivel carregar os dados climaticos.');
+        }
+      })
+      .finally(() => {
+        if (!controller.signal.aborted) setClimateLoading(false);
+      });
+
+    return () => controller.abort();
+  }, [climateDate.month, climateDate.year]);
+
+  useEffect(() => {
+    fetch('/api/politics')
+      .then((response) => response.json())
+      .then((data) => { if (!data.error) setPoliticsData(data); });
   }, []);
+
+  useEffect(() => {
+    fetch(`/api/co2?year=${co2Date.year}`)
+      .then((response) => response.json())
+      .then((data) => { if (!data.error) setCo2Data(data); });
+  }, [co2Date.year]);
 
   const sectionIdx     = useMotionValue(0);
   const currentSection = useRef(0);
@@ -96,6 +141,14 @@ export default function HomePage() {
   const activeFilter = category === 'climate'  ? store.climateFilter
     : category === 'politics'                   ? store.politicsFilter
     : store.co2Filter;
+
+  const mapData = mapCategory === 'climate' ? climateData
+    : mapCategory === 'politics'            ? politicsData
+    : co2Data;
+
+  const activeSectionData = category === 'climate' ? climateData
+    : category === 'politics'                      ? politicsData
+    : co2Data;
 
   const hasFocusedState = category !== 'hero' && Boolean(store.selectedStateId);
   const contentArea: React.CSSProperties = {
@@ -219,7 +272,7 @@ export default function HomePage() {
             style={{ transformOrigin: 'center left', willChange: 'transform' }}
           >
             <InteractiveMap
-              data={climateData}
+              data={mapData}
               categoryOverride={mapCategory}
               onStateClick={handleStateClick}
               onSelectedStateAnchorChange={handleSelectedStateAnchorChange}
@@ -282,7 +335,7 @@ export default function HomePage() {
               <div className="w-full h-full overflow-auto rounded-2xl bg-[#111827]/95 border border-slate-800/60 p-5 pt-12 backdrop-blur-sm">
                 <NationalTable
                   category={category as 'climate' | 'politics' | 'co2'}
-                  data={climateData}
+                  data={activeSectionData}
                   activeFilter={activeFilter}
                 />
               </div>
@@ -302,9 +355,18 @@ export default function HomePage() {
           </button>
         )}
 
+        {category === 'climate' && !hasFocusedState && (climateLoading || climateError) && (
+          <div
+            className="fixed z-[20] rounded-xl border border-white/10 bg-slate-950/80 px-4 py-2 text-xs font-semibold text-slate-300 backdrop-blur-md"
+            style={{ right: 32, top: 128 }}
+          >
+            {climateLoading ? 'Carregando clima...' : climateError}
+          </div>
+        )}
+
       </div>
 
-      <StateDetailsModal data={climateData} rightOffset={focusPanelRight} />
+      <StateDetailsModal data={activeSectionData} rightOffset={focusPanelRight} />
     </>
   );
 }
