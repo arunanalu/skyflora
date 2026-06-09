@@ -182,18 +182,20 @@ export function StateDetailsModal({ data = [], rightOffset = 32 }: { data?: Deta
                 {category === 'co2' && renderCO2Content()}
               </div>
 
-              <div className="flex justify-end">
-                <button
-                  onClick={() => {
-                    setMunicipalDrilldownUf(selectedStateId);
-                    setSelectedStateId(null);
-                  }}
-                  className="inline-flex items-center gap-2 rounded-xl bg-cyan-600 px-5 py-3 text-sm font-semibold text-white shadow-lg shadow-cyan-950/50 transition-colors hover:bg-cyan-500 cursor-pointer"
-                >
-                  Ver mais detalhes
-                  <ArrowUpRight className="h-4 w-4" strokeWidth={2.4} />
-                </button>
-              </div>
+              {category === 'climate' && (
+                <div className="flex justify-end">
+                  <button
+                    onClick={() => {
+                      setMunicipalDrilldownUf(selectedStateId);
+                      setSelectedStateId(null);
+                    }}
+                    className="inline-flex items-center gap-2 rounded-xl bg-cyan-600 px-5 py-3 text-sm font-semibold text-white shadow-lg shadow-cyan-950/50 transition-colors hover:bg-cyan-500 cursor-pointer"
+                  >
+                    Ver mais detalhes
+                    <ArrowUpRight className="h-4 w-4" strokeWidth={2.4} />
+                  </button>
+                </div>
+              )}
             </div>
           </div>
         </motion.aside>
