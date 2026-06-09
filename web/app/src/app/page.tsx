@@ -99,9 +99,9 @@ export default function HomePage() {
   const goToSection = useCallback((idx: number) => {
     const t = Math.max(0, Math.min(3, idx));
     currentSection.current = t;
+    setSelectedStateId(null);
+    setStateAnchor(null);
     if (t === 0) {
-      setSelectedStateId(null);
-      setStateAnchor(null);
       setShowTable(false);
     } else {
       setMapCategory(SECTION_CATS[t] as 'climate' | 'politics' | 'co2');
