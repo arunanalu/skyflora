@@ -23,7 +23,7 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: 'invalid json body' }, { status: 400 });
   }
 
-  tags.forEach(revalidateTag);
+  tags.forEach(tag => revalidateTag(tag, { expire: 0 }));
 
   return NextResponse.json({ revalidated: tags });
 }
