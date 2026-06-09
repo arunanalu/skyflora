@@ -317,7 +317,7 @@ export default function HomePage() {
             <button
               type="button"
               onClick={() => window.dispatchEvent(new CustomEvent('skyflora:navigate', { detail: 1 }))}
-              className="absolute bottom-12 left-1/2 -translate-x-1/2 w-14 h-14 flex items-center justify-center rounded-full bg-white/5 border border-white/10 text-slate-300 hover:text-white hover:bg-white/10 transition-all hover:scale-110 cursor-pointer"
+              className="absolute bottom-12 left-1/2 hidden h-14 w-14 -translate-x-1/2 items-center justify-center rounded-full border border-white/10 bg-white/5 text-slate-300 transition-all hover:scale-110 hover:bg-white/10 hover:text-white md:flex cursor-pointer"
             >
               <svg className="w-6 h-6 animate-bounce" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 14l-7 7m0 0l-7-7m7 7V3" />
