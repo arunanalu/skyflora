@@ -7,6 +7,7 @@ export interface DatabricksConfig {
   httpPath: string;
   token: string;
   climateStateTable: string;
+  climateMunicipalTable: string;
 }
 
 function readRequiredEnv(name: string): string {
@@ -29,5 +30,6 @@ export function getDatabricksConfig(): DatabricksConfig {
     httpPath: readRequiredEnv('DATABRICKS_HTTP_PATH'),
     token: readRequiredEnv('DATABRICKS_TOKEN'),
     climateStateTable: readRequiredEnv('DATABRICKS_CLIMATE_STATE_TABLE'),
+    climateMunicipalTable: readRequiredEnv('DATABRICKS_CLIMATE_MUNICIPAL_TABLE'),
   };
 }

@@ -6,6 +6,7 @@ import { InteractiveMap } from '../presentation/components/map/InteractiveMap';
 import { StateAnchor } from '../presentation/components/map/BrazilMap';
 import { NationalTable } from '../presentation/components/tables/NationalTable';
 import { StateDetailsModal } from '../presentation/components/map/StateDetailsModal';
+import { MunicipalDrilldownOverlay } from '../presentation/components/municipal/MunicipalDrilldownOverlay';
 import { Sidebar } from '../presentation/components/sidebar/Sidebar';
 import { ClimateData } from '../domain/entities/ClimateData';
 import { PoliticalProposal } from '../domain/entities/PoliticalProposal';
@@ -371,6 +372,7 @@ export default function HomePage() {
       </div>
 
       <StateDetailsModal data={activeSectionData} rightOffset={focusPanelRight} />
+      <MunicipalDrilldownOverlay />
     </>
   );
 }

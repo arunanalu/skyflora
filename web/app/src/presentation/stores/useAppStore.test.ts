@@ -6,6 +6,7 @@ describe('useAppStore', () => {
     useAppStore.setState({
       category: 'hero',
       selectedStateId: null,
+      municipalDrilldownUf: null,
       climateDate: { month: 12, year: 2024 },
       politicsDate: { month: 12, year: 2024 },
       co2Date: { year: 2024 },
@@ -34,5 +35,14 @@ describe('useAppStore', () => {
     const { setSelectedStateId } = useAppStore.getState();
     setSelectedStateId('SP');
     expect(useAppStore.getState().selectedStateId).toBe('SP');
+  });
+
+  it('deve abrir e fechar o drill-down municipal', () => {
+    const { setMunicipalDrilldownUf } = useAppStore.getState();
+    expect(useAppStore.getState().municipalDrilldownUf).toBeNull();
+    setMunicipalDrilldownUf('RJ');
+    expect(useAppStore.getState().municipalDrilldownUf).toBe('RJ');
+    setMunicipalDrilldownUf(null);
+    expect(useAppStore.getState().municipalDrilldownUf).toBeNull();
   });
 });

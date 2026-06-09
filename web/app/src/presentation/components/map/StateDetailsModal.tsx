@@ -33,7 +33,7 @@ type DetailRow = {
 
 export function StateDetailsModal({ data = [], rightOffset = 32 }: { data?: DetailRow[]; rightOffset?: number }) {
   const panelRef = useRef<HTMLElement | null>(null);
-  const { selectedStateId, setSelectedStateId, category, climateFilter, co2Filter } = useAppStore();
+  const { selectedStateId, setSelectedStateId, setMunicipalDrilldownUf, category, climateFilter, co2Filter } = useAppStore();
 
   const close = () => setSelectedStateId(null);
   const stateData = data.filter((d) => d.stateId === selectedStateId);
@@ -184,7 +184,10 @@ export function StateDetailsModal({ data = [], rightOffset = 32 }: { data?: Deta
 
               <div className="flex justify-end">
                 <button
-                  onClick={() => alert(`Drill-down municipal para ${selectedStateId} (em desenvolvimento)`)}
+                  onClick={() => {
+                    setMunicipalDrilldownUf(selectedStateId);
+                    setSelectedStateId(null);
+                  }}
                   className="inline-flex items-center gap-2 rounded-xl bg-cyan-600 px-5 py-3 text-sm font-semibold text-white shadow-lg shadow-cyan-950/50 transition-colors hover:bg-cyan-500 cursor-pointer"
                 >
                   Ver mais detalhes

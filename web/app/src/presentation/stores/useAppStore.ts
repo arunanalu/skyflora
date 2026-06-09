@@ -8,6 +8,7 @@ export const AVAILABLE_CO2_DATE = { year: 2024 } as const;
 export interface AppState {
   category: Category;
   selectedStateId: string | null;
+  municipalDrilldownUf: string | null;
 
   climateDate: { month: number; year: number };
   politicsDate: { month: number; year: number };
@@ -19,6 +20,7 @@ export interface AppState {
 
   setCategory: (category: Category) => void;
   setSelectedStateId: (stateId: string | null) => void;
+  setMunicipalDrilldownUf: (uf: string | null) => void;
 
   setClimateDate: (date: Partial<{ month: number; year: number }>) => void;
   setPoliticsDate: (date: Partial<{ month: number; year: number }>) => void;
@@ -32,6 +34,7 @@ export interface AppState {
 export const useAppStore = create<AppState>((set) => ({
   category: 'hero',
   selectedStateId: null,
+  municipalDrilldownUf: null,
 
   climateDate: { month: 12, year: 2024 },
   politicsDate: { month: 12, year: 2024 },
@@ -43,6 +46,7 @@ export const useAppStore = create<AppState>((set) => ({
 
   setCategory: (category) => set({ category }),
   setSelectedStateId: (selectedStateId) => set({ selectedStateId }),
+  setMunicipalDrilldownUf: (municipalDrilldownUf) => set({ municipalDrilldownUf }),
 
   setClimateDate: () => set({ climateDate: AVAILABLE_CLIMATE_DATE }),
   setPoliticsDate: () => set({ politicsDate: AVAILABLE_CLIMATE_DATE }),

@@ -1,5 +1,6 @@
 import { ClimateData } from '../../domain/entities/ClimateData';
 import { DatabricksClimateStateDTO } from '../dtos/DatabricksClimateStateDTO';
+import { toNumber, round, roundedNumber } from './mapperUtils';
 
 const MONTHS_BY_REFERENCE: Record<string, number> = {
   janeiro: 1,
@@ -16,25 +17,8 @@ const MONTHS_BY_REFERENCE: Record<string, number> = {
   dezembro: 12,
 };
 
-function toNumber(value: number | string | null | undefined): number | null {
-  if (value === null || value === undefined || value === '') return null;
-  const parsed = typeof value === 'number' ? value : Number(value);
-
-  return Number.isFinite(parsed) ? parsed : null;
-}
-
 function clamp(value: number, min = 0, max = 100): number {
   return Math.min(max, Math.max(min, value));
-}
-
-function round(value: number, digits = 2): number {
-  const multiplier = 10 ** digits;
-  return Math.round(value * multiplier) / multiplier;
-}
-
-function roundedNumber(value: number | string | null | undefined): number | null {
-  const parsed = toNumber(value);
-  return parsed === null ? null : round(parsed);
 }
 
 function parseReferencePeriod(period: string | null | undefined): { month?: number; year?: number } {
