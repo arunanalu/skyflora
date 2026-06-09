@@ -2,6 +2,9 @@ import { create } from 'zustand';
 
 export type Category = 'hero' | 'climate' | 'politics' | 'co2';
 
+export const AVAILABLE_CLIMATE_DATE = { month: 12, year: 2024 } as const;
+export const AVAILABLE_CO2_DATE = { year: 2024 } as const;
+
 export interface AppState {
   category: Category;
   selectedStateId: string | null;
@@ -41,9 +44,9 @@ export const useAppStore = create<AppState>((set) => ({
   setCategory: (category) => set({ category }),
   setSelectedStateId: (selectedStateId) => set({ selectedStateId }),
 
-  setClimateDate: (date) => set((state) => ({ climateDate: { ...state.climateDate, ...date } })),
-  setPoliticsDate: (date) => set((state) => ({ politicsDate: { ...state.politicsDate, ...date } })),
-  setCo2Date: (date) => set({ co2Date: date }),
+  setClimateDate: () => set({ climateDate: AVAILABLE_CLIMATE_DATE }),
+  setPoliticsDate: () => set({ politicsDate: AVAILABLE_CLIMATE_DATE }),
+  setCo2Date: () => set({ co2Date: AVAILABLE_CO2_DATE }),
 
   setClimateFilter: (filter) => set({ climateFilter: filter }),
   setPoliticsFilter: (filter) => set({ politicsFilter: filter }),

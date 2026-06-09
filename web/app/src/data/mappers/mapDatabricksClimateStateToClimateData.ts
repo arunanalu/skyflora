@@ -32,6 +32,11 @@ function round(value: number, digits = 2): number {
   return Math.round(value * multiplier) / multiplier;
 }
 
+function roundedNumber(value: number | string | null | undefined): number | null {
+  const parsed = toNumber(value);
+  return parsed === null ? null : round(parsed);
+}
+
 function parseReferencePeriod(period: string | null | undefined): { month?: number; year?: number } {
   if (!period) return {};
 
@@ -70,37 +75,44 @@ export function mapDatabricksClimateStateToClimateData(
   fallbackYear: number,
 ): ClimateData {
   const parsedPeriod = parseReferencePeriod(dto.periodo_referencia);
-  const temperature = toNumber(dto.temperatura_media_c) ?? 0;
+  const temperature = roundedNumber(dto.temperatura_media_c) ?? 0;
 
   return {
     stateId: dto.uf ?? '',
     stateName: dto.estado ?? undefined,
     temperature,
-    temperatureMin: toNumber(dto.temperatura_minima_c),
-    temperatureMax: toNumber(dto.temperatura_maxima_c),
-    temperatureStdDev: toNumber(dto.temperatura_desvio_padrao_c),
+    temperatureMin: roundedNumber(dto.temperatura_minima_c),
+    temperatureMax: roundedNumber(dto.temperatura_maxima_c),
+    temperatureStdDev: roundedNumber(dto.temperatura_desvio_padrao_c),
     atmosphereQuality: normalizeAtmosphereQuality(dto),
-    pm10Mean: toNumber(dto.poluicao_particulas_inalaveis_media),
-    pm25Mean: toNumber(dto.poluicao_particulas_finas_media),
-    carbonMonoxideMean: toNumber(dto.poluicao_monoxido_carbono_media),
-    cloudCoverageMean: toNumber(dto.percentual_nuvens_medio),
+    pm10Mean: roundedNumber(dto.poluicao_particulas_inalaveis_media),
+    pm25Mean: roundedNumber(dto.poluicao_particulas_finas_media),
+    carbonMonoxideMean: roundedNumber(dto.poluicao_monoxido_carbono_media),
+    cloudCoverageMean: roundedNumber(dto.percentual_nuvens_medio),
     soilMoisture: normalizeSoilMoisture(dto),
-    vegetationWaterLossMean: toNumber(dto.perda_agua_solo_vegetacao_media),
-    vegetationWaterLossMax: toNumber(dto.perda_agua_solo_vegetacao_maxima),
-    vegetationWaterLossMin: toNumber(dto.perda_agua_solo_vegetacao_minima),
-    vegetationWaterStressMean: toNumber(dto.estresse_hidrico_vegetacao_medio),
-    vegetationWaterStressMax: toNumber(dto.estresse_hidrico_vegetacao_maximo),
-    vegetationWaterStressMin: toNumber(dto.estresse_hidrico_vegetacao_minimo),
-    vegetationCoverIndexMean: toNumber(dto.indice_cobertura_vegetal_medio),
-    precipitationTotalMm: toNumber(dto.precipitacao_total_mm),
-    precipitationMeanMm: toNumber(dto.precipitacao_media_mm),
-    precipitationMaxMm: toNumber(dto.precipitacao_maxima_mm),
-    precipitationMinMm: toNumber(dto.precipitacao_minima_mm),
-    fireSpotsTotal: toNumber(dto.focos_queimadas_nasa_total),
-    fireSpotsMean: toNumber(dto.focos_queimadas_nasa_medio),
-    fireSpotsMax: toNumber(dto.focos_queimadas_nasa_maximo),
-    municipalityCount: toNumber(dto.quantidade_municipios),
-    sourceRecordCount: toNumber(dto.quantidade_registros_origem),
+    vegetationWaterLossMean: roundedNumber(dto.perda_agua_solo_vegetacao_media),
+    vegetationWaterLossMax: roundedNumber(dto.perda_agua_solo_vegetacao_maxima),
+    vegetationWaterLossMin: roundedNumber(dto.perda_agua_solo_vegetacao_minima),
+    vegetationWaterStressMean: roundedNumber(dto.estresse_hidrico_vegetacao_medio),
+    vegetationWaterStressMax: roundedNumber(dto.estresse_hidrico_vegetacao_maximo),
+    vegetationWaterStressMin: roundedNumber(dto.estresse_hidrico_vegetacao_minimo),
+    vegetationCoverIndexMean: roundedNumber(dto.indice_cobertura_vegetal_medio),
+    vegetationCoverIndexMin: roundedNumber(dto.indice_cobertura_vegetal_minimo),
+    vegetationCoverIndexMax: roundedNumber(dto.indice_cobertura_vegetal_maximo),
+    vegetationCoverIndexStdDev: roundedNumber(dto.indice_cobertura_vegetal_desvio_padrao),
+    precipitationTotalMm: roundedNumber(dto.precipitacao_total_mm),
+    precipitationMeanMm: roundedNumber(dto.precipitacao_media_mm),
+    precipitationMaxMm: roundedNumber(dto.precipitacao_maxima_mm),
+    precipitationMinMm: roundedNumber(dto.precipitacao_minima_mm),
+    fireSpotsTotal: roundedNumber(dto.focos_queimadas_nasa_total),
+    fireSpotsMean: roundedNumber(dto.focos_queimadas_nasa_medio),
+    fireSpotsMax: roundedNumber(dto.focos_queimadas_nasa_maximo),
+    cloudCoverageMin: roundedNumber(dto.percentual_nuvens_minimo),
+    cloudCoverageMax: roundedNumber(dto.percentual_nuvens_maximo),
+    highReliabilityRecordCount: roundedNumber(dto.registros_alta_confiabilidade),
+    highReliabilityPercent: roundedNumber(dto.percentual_alta_confiabilidade),
+    municipalityCount: roundedNumber(dto.quantidade_municipios),
+    sourceRecordCount: roundedNumber(dto.quantidade_registros_origem),
     referencePeriod: dto.periodo_referencia,
     processedAt: dto.timestamp_processamento,
     month: parsedPeriod.month ?? fallbackMonth,

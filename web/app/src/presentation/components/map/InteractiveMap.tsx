@@ -5,6 +5,7 @@ import { BrazilMap, StateAnchor } from './BrazilMap';
 import { ClimateData } from '../../../domain/entities/ClimateData';
 import { CO2Emission } from '../../../domain/entities/CO2Emission';
 import { PoliticalProposal } from '../../../domain/entities/PoliticalProposal';
+import { getAtmosphereColor, getSoilColor, getTemperatureColor } from '../../lib/climatePresentation';
 
 type MapDataRow = ClimateData | CO2Emission | PoliticalProposal;
 type DataCategory = 'climate' | 'politics' | 'co2';
@@ -39,21 +40,12 @@ export function InteractiveMap({ data, categoryOverride, onStateClick, onSelecte
     if (type === 'climate') {
       const climateRow = row as ClimateData;
       if (activeFilter === 'atmosfera') {
-        const v = climateRow.atmosphereQuality ?? 0;
-        if (v >= 80) return '#38bdf8';
-        if (v >= 50) return '#0ea5e9';
-        return '#0284c7';
+        return getAtmosphereColor(climateRow);
       }
       if (activeFilter === 'solo') {
-        const v = climateRow.soilMoisture ?? 0;
-        if (v >= 70) return '#34d399';
-        if (v >= 40) return '#10b981';
-        return '#059669';
+        return getSoilColor(climateRow);
       }
-      const v = climateRow.temperature ?? 0;
-      if (v >= 30) return '#ea580c';
-      if (v >= 28) return '#d97706';
-      return '#f59e0b';
+      return getTemperatureColor(climateRow);
     }
 
     if (type === 'politics') {

@@ -283,3 +283,52 @@ Resultado esperado: tela funcional, com dados reais e sem regressao visual evide
 - A tela de clima mostra solo por estado com dados derivados dos campos reais de solo/vegetacao.
 - Dados mockados continuam disponiveis via `CLIMATE_DATA_SOURCE=mock`.
 - Nenhum segredo fica salvo em arquivo versionado.
+
+## 8. Ajustes de apresentacao climatica
+
+Esta etapa melhora a leitura dos dados climaticos para usuarios nao tecnicos, usando o dicionario de dados em `dados_climaticos/v2/docs/data_dictionary.md` como referencia semantica.
+
+### 8.1 Textos explicativos por estado
+
+- [ ] Trocar o texto generico de `Dados consolidados` por uma leitura breve do indicador ativo.
+- [ ] Em `temperatura`, explicar conforto/risco considerando temperatura media, maxima e minima.
+- [ ] Em `atmosfera`, explicar PM2.5, PM10 e CO pelo impacto respiratorio, sem depender dos nomes tecnicos.
+- [ ] Em `solo`, explicar perda de agua, estresse hidrico, cobertura vegetal, nuvens e queimadas.
+- [ ] Manter os textos curtos para caber no modal sem competir com os numeros.
+
+### 8.2 Cores do mapa
+
+- [ ] Em `temperatura`, substituir thresholds fixos por uma classificacao dinamica de conforto termico:
+  - frio/abaixo do conforto: tons de azul;
+  - faixa confortavel, sem extremos: verde;
+  - calor moderado: amarelo;
+  - calor alto: laranja;
+  - maximas ou medias muito altas: vermelho.
+- [ ] Em `atmosfera`, colorir pelo pior sinal entre PM2.5, PM10 e CO:
+  - bom: verde;
+  - moderado: amarelo;
+  - ruim: laranja;
+  - muito prejudicial/perigoso: vermelho.
+- [ ] Em `solo`, considerar perda de agua, estresse hidrico, NDVI e focos de queimadas:
+  - saudavel/baixo risco: verde;
+  - atencao: amarelo;
+  - risco alto: laranja;
+  - risco severo ou muitos focos: vermelho.
+
+### 8.3 Metricas exibidas
+
+- [ ] Remover a exibicao de `Indice visual` no filtro de atmosfera.
+- [ ] Exibir `percentual_nuvens_medio` no filtro de atmosfera, explicando que nuvens podem reduzir a confiabilidade da leitura de vegetacao.
+- [ ] Exibir `focos_queimadas_nasa_total` no filtro de solo.
+- [ ] Arredondar todos os valores exibidos para 2 casas decimais.
+
+### 8.4 Restricao temporal atual
+
+- [ ] Enquanto houver somente `Dezembro 2024`, impedir que o usuario navegue para outros meses ou anos na timeline.
+- [ ] Ao tentar mudar a data, mostrar uma mensagem curta como `Mais datas em breve`.
+- [ ] Futuramente, quando houver historico, incluir logica para resolver a tabela ou particao de acordo com mes/ano. Uma possibilidade e variar o nome da tabela por periodo, por exemplo com sufixos mensais, mas essa decisao deve ser tomada quando os dados historicos forem disponibilizados.
+
+### 8.5 Tabela
+
+- [ ] O scroll dentro da tabela nao deve acionar a navegacao entre secoes.
+- [ ] A caixa da tabela deve usar melhor a altura disponivel da area central, valendo para clima, politica e CO2.

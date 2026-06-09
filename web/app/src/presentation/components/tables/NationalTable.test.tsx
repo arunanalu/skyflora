@@ -25,7 +25,7 @@ describe('NationalTable', () => {
 
     expect(screen.getByText('Sao Paulo')).toBeInTheDocument();
     expect(screen.getByText('SP')).toBeInTheDocument();
-    expect(screen.getByText('28,4 C')).toBeInTheDocument();
+    expect(screen.getByText('28,40 C')).toBeInTheDocument();
   });
 
   it('deve renderizar metricas atmosfericas quando o filtro esta ativo', () => {
@@ -45,7 +45,7 @@ describe('NationalTable', () => {
 
     render(<NationalTable data={mockData} category="climate" activeFilter="atmosfera" />);
 
-    expect(screen.getByText('PM2.5 / PM10')).toBeInTheDocument();
-    expect(screen.getByText('8,4 / 8,6')).toBeInTheDocument();
+    expect(screen.getByText('Particulas / nuvens')).toBeInTheDocument();
+    expect(screen.getByText('8,43 PM2.5')).toBeInTheDocument();
   });
 });

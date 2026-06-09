@@ -3,6 +3,7 @@
 import { ClimateData } from '../../../domain/entities/ClimateData';
 import { CO2Emission } from '../../../domain/entities/CO2Emission';
 import { PoliticalProposal } from '../../../domain/entities/PoliticalProposal';
+import { formatClimateNumber, getClimateBarClass, getClimateBarPercent } from '../../lib/climatePresentation';
 
 type TableRow = ClimateData | PoliticalProposal | CO2Emission;
 
@@ -54,14 +55,6 @@ function isCO2Row(row: TableRow): row is CO2Emission {
   return 'emissionAmount' in row;
 }
 
-function formatNumber(value: number | null | undefined, digits = 1): string {
-  if (value === null || value === undefined || !Number.isFinite(value)) return '-';
-  return value.toLocaleString('pt-BR', {
-    minimumFractionDigits: digits,
-    maximumFractionDigits: digits,
-  });
-}
-
 export function NationalTable({ data, category, activeFilter }: NationalTableProps) {
   if (!data || data.length === 0) {
     return (
@@ -73,8 +66,8 @@ export function NationalTable({ data, category, activeFilter }: NationalTablePro
 
   const getColName = () => {
     if (category === 'climate') {
-      if (activeFilter === 'atmosfera') return 'PM2.5 / PM10';
-      if (activeFilter === 'solo') return 'Solo / vegetacao';
+      if (activeFilter === 'atmosfera') return 'Particulas / nuvens';
+      if (activeFilter === 'solo') return 'Agua / queimadas';
       return 'Temp. media';
     }
     if (category === 'politics') return 'Impacto';
@@ -85,12 +78,12 @@ export function NationalTable({ data, category, activeFilter }: NationalTablePro
   const getRowValue = (row: TableRow) => {
     if (category === 'climate' && isClimateRow(row)) {
       if (activeFilter === 'atmosfera') {
-        return `${formatNumber(row.pm25Mean)} / ${formatNumber(row.pm10Mean)}`;
+        return `${formatClimateNumber(row.pm25Mean)} PM2.5`;
       }
       if (activeFilter === 'solo') {
-        return `${formatNumber(row.vegetationWaterLossMean)} perda`;
+        return `${formatClimateNumber(row.vegetationWaterLossMean)} mm/dia`;
       }
-      return `${formatNumber(row.temperature)} C`;
+      return formatClimateNumber(row.temperature, ' C');
     }
     if (category === 'politics' && isPoliticsRow(row)) return row.isBeneficial ? 'Benefica' : 'Malefica';
     if (category === 'co2' && isCO2Row(row) && activeFilter === 'principais_poluidores') return row.topPolluter || '-';
@@ -100,9 +93,7 @@ export function NationalTable({ data, category, activeFilter }: NationalTablePro
 
   const getPercentage = (row: TableRow) => {
     if (category === 'climate' && isClimateRow(row)) {
-      if (activeFilter === 'atmosfera') return row.atmosphereQuality || 0;
-      if (activeFilter === 'solo') return row.soilMoisture || 0;
-      return (row.temperature / 40) * 100;
+      return getClimateBarPercent(row, activeFilter);
     }
     if (category === 'politics' && isPoliticsRow(row)) return row.isBeneficial ? 100 : 20;
     if (category === 'co2' && isCO2Row(row) && activeFilter === 'principais_poluidores') {
@@ -114,9 +105,7 @@ export function NationalTable({ data, category, activeFilter }: NationalTablePro
 
   const getColor = (row: TableRow) => {
     if (category === 'climate') {
-      if (activeFilter === 'atmosfera') return 'bg-sky-500 shadow-[0_0_10px_rgba(14,165,233,0.6)]';
-      if (activeFilter === 'solo') return 'bg-emerald-500 shadow-[0_0_10px_rgba(16,185,129,0.6)]';
-      return 'bg-amber-500 shadow-[0_0_10px_rgba(245,158,11,0.6)]';
+      return isClimateRow(row) ? getClimateBarClass(row, activeFilter) : 'bg-slate-500';
     }
     if (category === 'politics' && isPoliticsRow(row)) return row.isBeneficial ? 'bg-emerald-500 shadow-[0_0_10px_rgba(16,185,129,0.6)]' : 'bg-red-500 shadow-[0_0_10px_rgba(239,68,68,0.6)]';
 
@@ -137,8 +126,8 @@ export function NationalTable({ data, category, activeFilter }: NationalTablePro
   };
 
   return (
-    <div className="w-full bg-[#111827]/60 backdrop-blur-md rounded-[2rem] border border-slate-800 shadow-2xl p-6">
-      <div className="w-full text-slate-300">
+    <div className="flex h-full min-h-[620px] w-full flex-col rounded-[2rem] border border-slate-800 bg-[#111827]/60 p-6 text-slate-300 shadow-2xl backdrop-blur-md">
+      <div className="flex min-h-0 w-full flex-1 flex-col">
         <div className="grid grid-cols-12 gap-4 text-[10px] uppercase tracking-widest font-bold text-slate-500 mb-2 px-6">
           <div className="col-span-1">#</div>
           <div className="col-span-4">Estado / Ref</div>
@@ -147,7 +136,7 @@ export function NationalTable({ data, category, activeFilter }: NationalTablePro
           <div className="col-span-3">Comparacao</div>
         </div>
 
-        <div className="flex flex-col gap-1 max-h-[500px] overflow-y-auto pr-2 custom-scrollbar">
+        <div data-skyflora-scroll-lock="true" className="custom-scrollbar flex min-h-0 flex-1 flex-col gap-1 overflow-y-auto overscroll-contain pr-2">
           {data.map((row, i) => {
             const stateName = getStateName(row);
             return (

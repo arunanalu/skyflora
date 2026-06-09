@@ -4,6 +4,7 @@ import { useEffect, useRef } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { ArrowUpRight, X } from 'lucide-react';
 import { useAppStore } from '../../stores/useAppStore';
+import { formatClimateNumber, getClimateSummary } from '../../lib/climatePresentation';
 
 type DetailRow = {
   id?: string;
@@ -18,11 +19,13 @@ type DetailRow = {
   pm10Mean?: number | null;
   pm25Mean?: number | null;
   carbonMonoxideMean?: number | null;
+  cloudCoverageMean?: number | null;
   soilMoisture?: number;
   vegetationWaterLossMean?: number | null;
   vegetationWaterStressMean?: number | null;
   vegetationCoverIndexMean?: number | null;
   precipitationTotalMm?: number | null;
+  fireSpotsTotal?: number | null;
   emissionAmount?: number;
   topPolluter?: string;
   polluterEmission?: number;
@@ -35,14 +38,6 @@ export function StateDetailsModal({ data = [], rightOffset = 32 }: { data?: Deta
   const close = () => setSelectedStateId(null);
   const stateData = data.filter((d) => d.stateId === selectedStateId);
   const firstRow = stateData[0] || {};
-
-  const formatNumber = (value: number | null | undefined, digits = 1) => {
-    if (value === null || value === undefined || !Number.isFinite(value)) return '-';
-    return value.toLocaleString('pt-BR', {
-      minimumFractionDigits: digits,
-      maximumFractionDigits: digits,
-    });
-  };
 
   useEffect(() => {
     if (!selectedStateId) return;
@@ -67,10 +62,10 @@ export function StateDetailsModal({ data = [], rightOffset = 32 }: { data?: Deta
     if (climateFilter === 'atmosfera') {
       return (
         <div className="grid grid-cols-2 gap-3">
-          <MetricCard label="PM2.5 media" value={formatNumber(firstRow.pm25Mean)} tone="sky" />
-          <MetricCard label="PM10 media" value={formatNumber(firstRow.pm10Mean)} tone="sky" />
-          <MetricCard label="CO medio" value={formatNumber(firstRow.carbonMonoxideMean)} />
-          <MetricCard label="Indice visual" value={`${formatNumber(firstRow.atmosphereQuality)}%`} />
+          <MetricCard label="Particulas finas" value={formatClimateNumber(firstRow.pm25Mean, ' ug/m3')} tone="sky" />
+          <MetricCard label="Particulas inalaveis" value={formatClimateNumber(firstRow.pm10Mean, ' ug/m3')} tone="sky" />
+          <MetricCard label="Monoxido de carbono" value={formatClimateNumber(firstRow.carbonMonoxideMean, ' ug/m3')} />
+          <MetricCard label="Nuvens medias" value={formatClimateNumber(firstRow.cloudCoverageMean, '%')} />
         </div>
       );
     }
@@ -78,19 +73,19 @@ export function StateDetailsModal({ data = [], rightOffset = 32 }: { data?: Deta
     if (climateFilter === 'solo') {
       return (
         <div className="grid grid-cols-2 gap-3">
-          <MetricCard label="Perda de agua" value={formatNumber(firstRow.vegetationWaterLossMean)} tone="emerald" />
-          <MetricCard label="Estresse hidrico" value={formatNumber(firstRow.vegetationWaterStressMean)} tone="emerald" />
-          <MetricCard label="Cobertura vegetal" value={formatNumber(firstRow.vegetationCoverIndexMean)} />
-          <MetricCard label="Precipitacao total" value={`${formatNumber(firstRow.precipitationTotalMm)} mm`} />
+          <MetricCard label="Perda de agua" value={formatClimateNumber(firstRow.vegetationWaterLossMean, ' mm/dia')} tone="emerald" />
+          <MetricCard label="Estresse hidrico" value={formatClimateNumber(firstRow.vegetationWaterStressMean, ' kPa')} tone="emerald" />
+          <MetricCard label="Cobertura vegetal" value={formatClimateNumber(firstRow.vegetationCoverIndexMean)} />
+          <MetricCard label="Focos de queimadas" value={formatClimateNumber(firstRow.fireSpotsTotal)} tone="red" />
         </div>
       );
     }
 
     return (
       <div className="grid grid-cols-3 gap-3">
-        <MetricCard label="Temp. maxima" value={`${formatNumber(firstRow.temperatureMax)} C`} tone="red" />
-        <MetricCard label="Temp. media" value={`${formatNumber(firstRow.temperature)} C`} tone="amber" />
-        <MetricCard label="Temp. minima" value={`${formatNumber(firstRow.temperatureMin)} C`} tone="blue" />
+        <MetricCard label="Temp. maxima" value={formatClimateNumber(firstRow.temperatureMax, ' C')} tone="red" />
+        <MetricCard label="Temp. media" value={formatClimateNumber(firstRow.temperature, ' C')} tone="amber" />
+        <MetricCard label="Temp. minima" value={formatClimateNumber(firstRow.temperatureMin, ' C')} tone="blue" />
       </div>
     );
   };
@@ -135,6 +130,10 @@ export function StateDetailsModal({ data = [], rightOffset = 32 }: { data?: Deta
     );
   };
 
+  const climateSummary = category === 'climate' && firstRow.temperature !== undefined
+    ? getClimateSummary(firstRow, climateFilter)
+    : null;
+
   return (
     <AnimatePresence>
       {selectedStateId && (
@@ -171,9 +170,11 @@ export function StateDetailsModal({ data = [], rightOffset = 32 }: { data?: Deta
               </div>
 
               <div className="mb-5 rounded-3xl border border-slate-700/55 bg-slate-950/28 p-5">
-                <h3 className="mb-2 text-lg font-semibold text-white">Dados consolidados</h3>
+                <h3 className="mb-2 text-lg font-semibold text-white">
+                  {climateSummary?.title ?? 'Dados consolidados'}
+                </h3>
                 <p className="mb-4 text-sm leading-relaxed text-slate-400">
-                  Um recorte do estado selecionado para comparar indicadores ambientais, pressoes politicas e sinais de emissao com mais contexto.
+                  {climateSummary?.description ?? 'Um recorte do estado selecionado para comparar indicadores ambientais, pressoes politicas e sinais de emissao com mais contexto.'}
                 </p>
                 {category === 'climate' && renderClimateContent()}
                 {category === 'politics' && renderPoliticsContent()}

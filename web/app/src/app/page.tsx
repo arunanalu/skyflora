@@ -108,6 +108,10 @@ export default function HomePage() {
   useEffect(() => {
     let locked = false;
     const onWheel = (e: WheelEvent) => {
+      if (e.target instanceof Element && e.target.closest('[data-skyflora-scroll-lock="true"]')) {
+        return;
+      }
+
       e.preventDefault();
       if (locked) return;
       const next = Math.max(0, Math.min(3, currentSection.current + (e.deltaY > 0 ? 1 : -1)));
@@ -332,7 +336,7 @@ export default function HomePage() {
               transition={{ duration: 0.18, ease: 'easeOut' }}
               style={{ ...contentArea, zIndex: 15 }}
             >
-              <div className="w-full h-full overflow-auto rounded-2xl bg-[#111827]/95 border border-slate-800/60 p-5 pt-12 backdrop-blur-sm">
+              <div data-skyflora-scroll-lock="true" className="h-full w-full overflow-hidden overscroll-contain rounded-2xl border border-slate-800/60 bg-[#111827]/95 p-5 pt-12 backdrop-blur-sm">
                 <NationalTable
                   category={category as 'climate' | 'politics' | 'co2'}
                   data={activeSectionData}

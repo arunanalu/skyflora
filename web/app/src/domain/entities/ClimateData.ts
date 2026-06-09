@@ -18,6 +18,9 @@ export interface ClimateData {
   vegetationWaterStressMax?: number | null;
   vegetationWaterStressMin?: number | null;
   vegetationCoverIndexMean?: number | null;
+  vegetationCoverIndexMin?: number | null;
+  vegetationCoverIndexMax?: number | null;
+  vegetationCoverIndexStdDev?: number | null;
   precipitationTotalMm?: number | null;
   precipitationMeanMm?: number | null;
   precipitationMaxMm?: number | null;
@@ -25,6 +28,10 @@ export interface ClimateData {
   fireSpotsTotal?: number | null;
   fireSpotsMean?: number | null;
   fireSpotsMax?: number | null;
+  cloudCoverageMin?: number | null;
+  cloudCoverageMax?: number | null;
+  highReliabilityRecordCount?: number | null;
+  highReliabilityPercent?: number | null;
   municipalityCount?: number | null;
   sourceRecordCount?: number | null;
   referencePeriod?: string | null;
