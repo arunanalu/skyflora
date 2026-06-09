@@ -57,9 +57,11 @@ export function MunicipalDrilldownContent({ uf, filter }: MunicipalDrilldownCont
   };
 
   useEffect(() => {
-    setOffset(0);
-    setRows([]);
-    fetchData(0, false);
+    Promise.resolve().then(() => {
+      setOffset(0);
+      setRows([]);
+      fetchData(0, false);
+    });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [uf, date, search]);
 
@@ -81,7 +83,7 @@ export function MunicipalDrilldownContent({ uf, filter }: MunicipalDrilldownCont
         resultCount={rows.length}
       />
 
-      <div className="flex-1 overflow-y-auto overscroll-contain px-4 py-4">
+      <div className="custom-scrollbar flex-1 overflow-y-auto overscroll-contain px-4 py-4">
         {error ? (
           <div className="flex items-center justify-center py-16 text-red-400 text-sm">{error}</div>
         ) : (

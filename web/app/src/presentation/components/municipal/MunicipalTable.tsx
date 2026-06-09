@@ -109,8 +109,8 @@ export function MunicipalTable({ data, loading, filter }: MunicipalTableProps) {
   }
 
   return (
-    <div className="overflow-x-auto">
-      <div className="min-w-max">
+    <div className="custom-scrollbar overflow-x-auto">
+      <div className="min-w-[720px]">
         {/* Header */}
         <div className="flex items-center gap-3 px-4 pb-2 text-[10px] font-bold uppercase tracking-widest text-slate-500">
           <span className="w-6 flex-shrink-0 text-center">#</span>

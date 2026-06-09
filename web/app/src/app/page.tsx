@@ -12,11 +12,16 @@ import { ClimateData } from '../domain/entities/ClimateData';
 import { PoliticsStateData } from '../domain/entities/PoliticsStateData';
 import { CO2Emission } from '../domain/entities/CO2Emission';
 import { AVAILABLE_POLITICS_PERIODO } from '../presentation/stores/useAppStore';
+import { useIsMobile } from '../presentation/hooks/useIsMobile';
+import { MobileFilterBar } from '../presentation/components/mobile/MobileFilterBar';
 
 const SIDEBAR_OFFSET = 308;
 const SCROLL_LOCK_MS = 300;
 const FOCUS_PANEL_WIDTH = 560;
 const FOCUS_CLUSTER_MAX_WIDTH = 1240;
+const MOBILE_TOPBAR_H = 52;
+const MOBILE_FILTER_H = 68;
+const MOBILE_TIMELINE_H = 72;
 const SECTION_CATS: Category[] = ['hero', 'climate', 'politics', 'co2'];
 
 const SECTION_META = {
@@ -27,6 +32,7 @@ const SECTION_META = {
 
 export default function HomePage() {
   const store = useAppStore();
+  const isMobile = useIsMobile();
   const { category, setCategory, setSelectedStateId, climateDate, co2Date, municipalDrilldownUf } = store;
 
   // Ref so the wheel handler always reads the latest value without re-registering
@@ -206,9 +212,17 @@ export default function HomePage() {
     : co2Data;
 
   const hasFocusedState = category !== 'hero' && Boolean(store.selectedStateId);
-  const contentArea: React.CSSProperties = {
-    position: 'fixed', left: SIDEBAR_OFFSET, right: 32, top: 72, bottom: 96,
-  };
+  const contentArea: React.CSSProperties = isMobile
+    ? {
+        position: 'fixed',
+        left: 0,
+        right: 0,
+        top: MOBILE_TOPBAR_H + MOBILE_FILTER_H,
+        bottom: MOBILE_TIMELINE_H,
+      }
+    : {
+        position: 'fixed', left: SIDEBAR_OFFSET, right: 32, top: 72, bottom: 96,
+      };
   const handleStateClick = useCallback((stateId: string, anchor: StateAnchor) => {
     setShowTable(false);
     setStateAnchor(hasFocusedState ? anchor : null);
@@ -246,8 +260,8 @@ export default function HomePage() {
           </svg>
         </motion.div>
 
-        {/* Left panel: animated title + persistent sidebar */}
-        {category !== 'hero' && meta && (
+        {/* Left panel: animated title + persistent sidebar — desktop only */}
+        {!isMobile && category !== 'hero' && meta && (
           <div
             className="fixed left-8 z-[200] pointer-events-auto flex flex-col justify-center gap-5"
             style={{ top: 72, bottom: 96 }}
@@ -275,6 +289,11 @@ export default function HomePage() {
           </div>
         )}
 
+        {/* Mobile filter bar — shown below topbar on data sections */}
+        {isMobile && category !== 'hero' && (
+          <MobileFilterBar meta={meta} />
+        )}
+
         {/* Hero */}
         <motion.section
           style={{ y: heroY, opacity: heroOpacity, scale: heroScale, pointerEvents: category === 'hero' ? 'auto' : 'none' }}
@@ -290,7 +309,7 @@ export default function HomePage() {
                 <br />
                 e o impacto político num só ecossistema
               </h1>
-              <p className="text-lg md:text-xl text-slate-400 mb-12 max-w-3xl mx-auto leading-relaxed">
+              <p className="text-base md:text-xl text-slate-400 mb-10 md:mb-12 max-w-3xl mx-auto leading-relaxed px-2 md:px-0">
                 Skyflora conecta dados climáticos, decisões legislativas e emissões de CO₂ em visualizações interativas
                 para ampliar a visibilidade e a transparência sobre o meio ambiente no Brasil.
               </p>
@@ -311,20 +330,24 @@ export default function HomePage() {
         <motion.div
           style={{
             ...contentArea,
-            opacity: hasFocusedState ? 0.58 : mapOpacity,
+            opacity: hasFocusedState ? (isMobile ? 0.95 : 0.58) : mapOpacity,
             zIndex: 10,
             pointerEvents: category === 'hero' ? 'none' : 'auto',
           }}
         >
           <motion.div
             className="h-full w-full"
-            animate={{
+            animate={isMobile ? {
+              x: 0,
+              y: hasFocusedState ? -190 : 0,
+              scale: hasFocusedState ? 0.56 : 1,
+            } : {
               x: hasFocusedState ? -128 : 0,
               y: hasFocusedState ? 24 : 0,
               scale: hasFocusedState ? 0.64 : 1,
             }}
             transition={{ duration: 0.38, ease: [0.22, 1, 0.36, 1] }}
-            style={{ transformOrigin: 'center left', willChange: 'transform' }}
+            style={{ transformOrigin: isMobile ? 'center center' : 'center left', willChange: 'transform' }}
           >
             <InteractiveMap
               data={mapData}
@@ -336,7 +359,7 @@ export default function HomePage() {
         </motion.div>
 
         <AnimatePresence>
-          {hasFocusedState && stateAnchor && (
+          {!isMobile && hasFocusedState && stateAnchor && (
             <motion.svg
               key="state-focus-connector"
               className="fixed inset-0 pointer-events-none z-[120]"
@@ -387,7 +410,7 @@ export default function HomePage() {
               transition={{ duration: 0.18, ease: 'easeOut' }}
               style={{ ...contentArea, zIndex: 15 }}
             >
-              <div data-skyflora-scroll-lock="true" className="h-full w-full overflow-hidden overscroll-contain rounded-2xl border border-slate-800/60 bg-[#111827]/95 p-5 pt-12 backdrop-blur-sm">
+              <div data-skyflora-scroll-lock="true" className="custom-scrollbar h-full w-full overflow-auto overscroll-contain rounded-2xl border border-slate-800/60 bg-[#111827]/95 p-4 pt-10 backdrop-blur-sm md:p-5 md:pt-12">
                 <NationalTable
                   category={category as 'climate' | 'politics' | 'co2'}
                   data={activeSectionData}
@@ -403,8 +426,11 @@ export default function HomePage() {
           <button
             type="button"
             onClick={() => setShowTable(v => !v)}
-            className="fixed z-[20] text-xs font-semibold bg-white/5 hover:bg-white/10 text-white px-4 py-2 rounded-xl border border-white/10 cursor-pointer transition-all"
-            style={{ right: 32, top: 84 }}
+            className="fixed z-[20] text-xs font-semibold bg-white/5 hover:bg-white/10 text-white px-3 md:px-4 py-2 rounded-xl border border-white/10 cursor-pointer transition-all"
+            style={isMobile
+              ? { right: 12, top: MOBILE_TOPBAR_H + MOBILE_FILTER_H + 8 }
+              : { right: 32, top: 84 }
+            }
           >
             {showTable ? '▧ Mapa' : '≡ Tabela'}
           </button>
@@ -413,7 +439,7 @@ export default function HomePage() {
         {category === 'climate' && !hasFocusedState && (climateLoading || climateError) && (
           <div
             className="fixed z-[20] rounded-xl border border-white/10 bg-slate-950/80 px-4 py-2 text-xs font-semibold text-slate-300 backdrop-blur-md"
-            style={{ right: 32, top: 128 }}
+            style={isMobile ? { right: 12, top: MOBILE_TOPBAR_H + MOBILE_FILTER_H + 52 } : { right: 32, top: 128 }}
           >
             {climateLoading ? 'Carregando clima...' : climateError}
           </div>
@@ -422,7 +448,7 @@ export default function HomePage() {
         {category === 'co2' && !hasFocusedState && (co2Loading || co2Error) && (
           <div
             className="fixed z-[20] rounded-xl border border-white/10 bg-slate-950/80 px-4 py-2 text-xs font-semibold text-slate-300 backdrop-blur-md"
-            style={{ right: 32, top: 128 }}
+            style={isMobile ? { right: 12, top: MOBILE_TOPBAR_H + MOBILE_FILTER_H + 52 } : { right: 32, top: 128 }}
           >
             {co2Loading ? 'Carregando CO₂...' : co2Error}
           </div>
@@ -431,7 +457,7 @@ export default function HomePage() {
         {category === 'politics' && !hasFocusedState && (politicsLoading || politicsError) && (
           <div
             className="fixed z-[20] rounded-xl border border-white/10 bg-slate-950/80 px-4 py-2 text-xs font-semibold text-slate-300 backdrop-blur-md"
-            style={{ right: 32, top: 128 }}
+            style={isMobile ? { right: 12, top: MOBILE_TOPBAR_H + MOBILE_FILTER_H + 52 } : { right: 32, top: 128 }}
           >
             {politicsLoading ? 'Carregando dados politicos...' : politicsError}
           </div>

@@ -3,6 +3,7 @@
 import { useEffect, useRef } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { ArrowUpRight, X } from 'lucide-react';
+import { useIsMobile } from '../../hooks/useIsMobile';
 import { useAppStore } from '../../stores/useAppStore';
 import { formatClimateNumber, getClimateSummary } from '../../lib/climatePresentation';
 import { formatCO2Emission, getCO2SectorColor } from '../../lib/co2Presentation';
@@ -57,6 +58,7 @@ type DetailRow = {
 
 export function StateDetailsModal({ data = [], rightOffset = 32 }: { data?: DetailRow[]; rightOffset?: number }) {
   const panelRef = useRef<HTMLElement | null>(null);
+  const isMobile = useIsMobile();
   const { selectedStateId, setSelectedStateId, setMunicipalDrilldownUf, category, climateFilter, politicsFilter } = useAppStore();
 
   const close = () => setSelectedStateId(null);
@@ -252,20 +254,34 @@ export function StateDetailsModal({ data = [], rightOffset = 32 }: { data?: Deta
     ? getPoliticsSummary(firstRow as PoliticsStateData, politicsFilter)
     : null;
 
+  const isMobileCO2 = isMobile && category === 'co2';
+
   return (
     <AnimatePresence>
       {selectedStateId && (
         <motion.aside
           ref={panelRef}
           key={selectedStateId}
-          initial={{ opacity: 0, x: 44, scale: 0.98 }}
-          animate={{ opacity: 1, x: 0, scale: 1 }}
-          exit={{ opacity: 0, x: 44, scale: 0.98 }}
+          initial={isMobile ? { opacity: 0, y: 80 } : { opacity: 0, x: 44, scale: 0.98 }}
+          animate={isMobile ? { opacity: 1, y: 0 } : { opacity: 1, x: 0, scale: 1 }}
+          exit={isMobile ? { opacity: 0, y: 80 } : { opacity: 0, x: 44, scale: 0.98 }}
           transition={{ duration: 0.32, ease: [0.22, 1, 0.36, 1] }}
-          className="fixed top-28 z-[180] w-[min(38vw,560px)] min-w-[430px] max-h-[calc(100vh-14rem)] pointer-events-auto"
-          style={{ right: rightOffset }}
+          className={
+            isMobileCO2
+              ? 'fixed inset-x-0 bottom-0 top-[52px] z-[260] pointer-events-auto'
+              : isMobile
+              ? 'fixed bottom-0 left-0 right-0 z-[180] pointer-events-auto max-h-[75vh]'
+              : 'fixed top-28 z-[180] w-[min(38vw,560px)] min-w-[430px] max-h-[calc(100vh-14rem)] pointer-events-auto'
+          }
+          style={isMobile ? {} : { right: rightOffset }}
         >
-          <div className="relative overflow-hidden rounded-[2rem] border border-slate-700/70 bg-[#101827]/92 p-7 shadow-2xl shadow-black/45 backdrop-blur-xl">
+          <div className={`relative overflow-hidden border border-slate-700/70 bg-[#101827]/92 shadow-2xl shadow-black/45 backdrop-blur-xl ${
+            isMobileCO2
+              ? 'custom-scrollbar h-full overflow-y-auto rounded-t-[2rem] p-5'
+              : isMobile
+                ? 'custom-scrollbar rounded-t-[2rem] p-5 overflow-y-auto max-h-[75vh]'
+                : 'rounded-[2rem] p-7'
+          }`}>
             <div className="absolute inset-x-8 top-0 h-px bg-gradient-to-r from-transparent via-emerald-300/90 to-cyan-300/70" />
             <div className="absolute left-0 top-0 h-28 w-28 rounded-br-[3rem] bg-emerald-400/8 blur-2xl" />
 
@@ -279,10 +295,10 @@ export function StateDetailsModal({ data = [], rightOffset = 32 }: { data?: Deta
             </button>
 
             <div className="relative z-10 flex flex-col">
-              <div className="mb-6 pr-12">
+              <div className={`${isMobile ? 'mb-3 pr-10' : 'mb-6 pr-12'}`}>
                 <span className="mb-3 block text-[10px] font-bold uppercase tracking-[0.28em] text-emerald-300">Estado em foco</span>
                 <div className="flex items-end gap-4">
-                  <h2 className="font-serif text-6xl leading-none text-white">{selectedStateId}</h2>
+                  <h2 className={`font-serif leading-none text-white ${isMobile ? 'text-4xl' : 'text-6xl'}`}>{selectedStateId}</h2>
                   {category === 'co2' && firstRow.stateName && (
                     <span className="mb-1 text-sm text-slate-400 font-medium">{firstRow.stateName}</span>
                   )}
@@ -290,7 +306,13 @@ export function StateDetailsModal({ data = [], rightOffset = 32 }: { data?: Deta
                 </div>
               </div>
 
-              <div className={`mb-5 rounded-3xl border border-slate-700/55 bg-slate-950/28 p-5 ${category === 'co2' || category === 'politics' ? 'overflow-y-auto max-h-[calc(100vh-22rem)]' : ''}`}>
+              <div className={`mb-5 rounded-3xl border border-slate-700/55 bg-slate-950/28 p-5 ${
+                isMobileCO2
+                  ? ''
+                  : category === 'co2' || category === 'politics'
+                    ? 'custom-scrollbar overflow-y-auto max-h-[calc(100vh-22rem)]'
+                    : ''
+              }`}>
                 {category !== 'co2' && category !== 'politics' && (
                   <>
                     <h3 className="mb-2 text-lg font-semibold text-white">

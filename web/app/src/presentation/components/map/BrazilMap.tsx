@@ -1,5 +1,6 @@
 'use client';
 import React, { memo, useCallback, useEffect, useRef, useState } from 'react';
+import { useIsMobile } from '../../hooks/useIsMobile';
 
 
 type Coord = [number, number];
@@ -78,6 +79,7 @@ export interface BrazilMapProps {
 }
 
 export const BrazilMap = memo(function BrazilMap({ getStateColor, selectedStateId, onStateClick, onSelectedStateAnchorChange }: BrazilMapProps) {
+  const isMobile = useIsMobile();
   const svgRef = useRef<SVGSVGElement | null>(null);
   const [states, setStates] = useState<MapState[]>([]);
   const [loading, setLoading]   = useState(true);
@@ -151,71 +153,73 @@ export const BrazilMap = memo(function BrazilMap({ getStateColor, selectedStateI
     <svg
       ref={svgRef}
       viewBox={`0 0 ${VW} ${VH}`}
-      className="w-full h-full"
+      className="mx-auto h-full w-[92%] md:w-full"
       style={{ willChange: 'transform' }}
       aria-label="Mapa interativo do Brasil"
       data-skyflora-map="true"
     >
-      {states.map(({ uf, d, centroid: [cx, cy] }) => {
-        const color    = getStateColor(uf);
-        const isSel    = selectedStateId === uf;
-        const isHov    = hovered === uf;
-        const dimmed   = selectedStateId !== null && !isSel;
-        const compactLabel = COMPACT_LABEL_OFFSETS[uf];
-        const labelX = cx + (compactLabel?.dx ?? 0);
-        const labelY = cy + (compactLabel?.dy ?? 0);
-        const labelFontSize = compactLabel?.fontSize ?? (isSel ? 11 : 9);
+      <g transform={isMobile ? 'translate(26 0)' : undefined}>
+        {states.map(({ uf, d, centroid: [cx, cy] }) => {
+          const color    = getStateColor(uf);
+          const isSel    = selectedStateId === uf;
+          const isHov    = hovered === uf;
+          const dimmed   = selectedStateId !== null && !isSel;
+          const compactLabel = COMPACT_LABEL_OFFSETS[uf];
+          const labelX = cx + (compactLabel?.dx ?? 0);
+          const labelY = cy + (compactLabel?.dy ?? 0);
+          const labelFontSize = compactLabel?.fontSize ?? (isSel ? 11 : 9);
 
-        return (
-          <g key={uf}>
-            <path
-              d={d}
-              fill={color}
-              fillOpacity={dimmed ? 0.35 : 1}
-              stroke="#0f172a"
-              strokeWidth={isSel ? 2 : 0.6}
-              strokeLinejoin="round"
-              style={{
-                cursor: 'pointer',
-                filter: isHov || isSel ? 'brightness(1.25)' : undefined,
-              }}
-              onClick={() => onStateClick(uf, getViewportPoint(cx, cy))}
-              onMouseEnter={() => setHovered(uf)}
-              onMouseLeave={() => setHovered(null)}
-            />
-            {(isSel || isHov) && (
-              <>
-                {compactLabel && (
-                  <line
-                    x1={cx}
-                    y1={cy}
-                    x2={labelX - 7}
-                    y2={labelY}
-                    stroke="#e2e8f0"
-                    strokeWidth={0.8}
-                    strokeOpacity={0.85}
+          return (
+            <g key={uf}>
+              <path
+                d={d}
+                fill={color}
+                fillOpacity={dimmed ? 0.35 : 1}
+                stroke="#0f172a"
+                strokeWidth={isSel ? 2 : 0.6}
+                strokeLinejoin="round"
+                style={{
+                  cursor: 'pointer',
+                  filter: isHov || isSel ? 'brightness(1.25)' : undefined,
+                }}
+                onClick={() => onStateClick(uf, getViewportPoint(cx, cy))}
+                onMouseEnter={() => setHovered(uf)}
+                onMouseLeave={() => setHovered(null)}
+              />
+              {(isSel || isHov) && (
+                <>
+                  {compactLabel && (
+                    <line
+                      x1={cx}
+                      y1={cy}
+                      x2={labelX - 7}
+                      y2={labelY}
+                      stroke="#e2e8f0"
+                      strokeWidth={0.8}
+                      strokeOpacity={0.85}
+                      style={{ pointerEvents: 'none' }}
+                    />
+                  )}
+                  <text
+                    x={labelX} y={labelY}
+                    textAnchor="middle"
+                    dominantBaseline="middle"
+                    fontSize={labelFontSize}
+                    fontWeight={700}
+                    fill="#f8fafc"
+                    stroke="#0f172a"
+                    strokeWidth={2.6}
+                    paintOrder="stroke"
                     style={{ pointerEvents: 'none' }}
-                  />
-                )}
-                <text
-                  x={labelX} y={labelY}
-                  textAnchor="middle"
-                  dominantBaseline="middle"
-                  fontSize={labelFontSize}
-                  fontWeight={700}
-                  fill="#f8fafc"
-                  stroke="#0f172a"
-                  strokeWidth={2.6}
-                  paintOrder="stroke"
-                  style={{ pointerEvents: 'none' }}
-                >
-                  {uf}
-                </text>
-              </>
-            )}
-          </g>
-        );
-      })}
+                  >
+                    {uf}
+                  </text>
+                </>
+              )}
+            </g>
+          );
+        })}
+      </g>
     </svg>
   );
 });

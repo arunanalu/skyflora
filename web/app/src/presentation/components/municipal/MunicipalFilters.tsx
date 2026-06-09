@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
+import { useRef, useState } from 'react';
 import { Search, X } from 'lucide-react';
 
 interface MunicipalFiltersProps {
@@ -25,10 +25,6 @@ export function MunicipalFilters({
   const [inputValue, setInputValue] = useState(search);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  useEffect(() => {
-    setInputValue(search);
-  }, [search]);
-
   const handleInput = (value: string) => {
     setInputValue(value);
     if (debounceRef.current) clearTimeout(debounceRef.current);
@@ -41,9 +37,9 @@ export function MunicipalFilters({
   };
 
   return (
-    <div className="flex flex-wrap items-center gap-3 px-6 py-4 border-b border-slate-800">
+    <div className="flex flex-wrap items-center gap-3 border-b border-slate-800 px-4 py-3 md:px-6 md:py-4">
       {/* Busca */}
-      <div className="relative flex-1 min-w-[200px] max-w-sm">
+      <div className="relative w-full flex-1 basis-full md:min-w-[200px] md:max-w-sm md:basis-auto">
         <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-500 pointer-events-none" />
         <input
           type="text"

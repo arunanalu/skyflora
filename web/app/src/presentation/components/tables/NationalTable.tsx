@@ -12,6 +12,7 @@ import {
 } from '../../lib/climatePresentation';
 import { formatCO2Emission } from '../../lib/co2Presentation';
 import { formatPoliticsRate, formatDecimal, getPoliticsAtividadeColor, getPoliticsRateColor } from '../../lib/politicsPresentation';
+import { useIsMobile } from '../../hooks/useIsMobile';
 
 type TableRow = ClimateData | PoliticsStateData | CO2Emission;
 
@@ -181,6 +182,8 @@ function getPoliticsColorStyle(row: TableRow, col: ColDef, filter: string): Reac
 }
 
 export function NationalTable({ data, category, activeFilter }: NationalTableProps) {
+  const isMobile = useIsMobile();
+
   if (!data || data.length === 0) {
     return (
       <div className="w-full bg-[#111827]/60 backdrop-blur-md rounded-[2rem] border border-slate-800 shadow-2xl p-6 text-center text-slate-500 py-20">
@@ -191,14 +194,63 @@ export function NationalTable({ data, category, activeFilter }: NationalTablePro
 
   const cols = getColumns(category, activeFilter);
 
+  if (isMobile) {
+    return (
+      <div
+        data-skyflora-scroll-lock="true"
+        className="custom-scrollbar flex h-full w-full flex-col gap-2 overflow-y-auto overscroll-contain rounded-[1.5rem] border border-slate-800 bg-[#111827]/60 p-3 text-slate-300 shadow-2xl backdrop-blur-md"
+      >
+        {data.map((row, i) => {
+          const stateName = getStateName(row);
+          return (
+            <div
+              key={`${getStateKey(row)}-${i}`}
+              className="rounded-2xl border border-slate-800/70 bg-slate-900/45 p-4"
+            >
+              <div className="mb-3 flex items-center gap-3">
+                <span className="w-6 flex-shrink-0 text-center font-serif text-sm text-slate-500">{i + 1}</span>
+                {category === 'climate' && isClimateRow(row) && (
+                  <ClimateStatusDot row={row} filter={activeFilter} />
+                )}
+                <span className="min-w-0 flex-1 truncate text-sm font-bold text-slate-100" title={stateName}>
+                  {stateName}
+                </span>
+                <span className="text-[10px] font-bold uppercase tracking-widest text-slate-600">
+                  {getStateKey(row)}
+                </span>
+              </div>
+
+              <div className="grid grid-cols-2 gap-2">
+                {cols.map((col) => {
+                  const value = col.value(row);
+                  const politicsStyle = category === 'politics' ? getPoliticsColorStyle(row, col, activeFilter) : {};
+                  return (
+                    <div key={col.header} className="rounded-xl border border-slate-800/70 bg-slate-950/30 p-3">
+                      <div className="mb-1 truncate text-[9px] font-bold uppercase tracking-widest text-slate-500">
+                        {col.header}
+                      </div>
+                      <div className="break-words text-sm font-semibold tabular-nums leading-snug text-slate-100" style={politicsStyle} title={value}>
+                        {value}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    );
+  }
+
   return (
-    <div className="flex h-full min-h-[620px] w-full flex-col rounded-[2rem] border border-slate-800 bg-[#111827]/60 p-6 text-slate-300 shadow-2xl backdrop-blur-md">
+    <div className="flex h-full w-full min-w-[640px] flex-col rounded-[2rem] border border-slate-800 bg-[#111827]/60 p-4 text-slate-300 shadow-2xl backdrop-blur-md md:min-w-[580px] md:p-6">
       {/* Header */}
       <div className="flex items-center gap-3 px-4 pb-2 text-[10px] font-bold uppercase tracking-widest text-slate-500">
         <span className="w-6 flex-shrink-0 text-center">#</span>
         {/* status dot placeholder */}
         {category === 'climate' && <span className="w-2 flex-shrink-0" />}
-        <span className="flex-1 min-w-0">Estado</span>
+        <span className="w-36 flex-shrink-0 md:min-w-0 md:flex-1">Estado</span>
         {cols.map((col, i) => (
           <span key={i} className={`flex-shrink-0 text-right ${col.width}`}>{col.header}</span>
         ))}
@@ -222,7 +274,7 @@ export function NationalTable({ data, category, activeFilter }: NationalTablePro
                 <ClimateStatusDot row={row} filter={activeFilter} />
               )}
 
-              <span className="flex-1 min-w-0 truncate text-sm font-bold text-slate-200" title={stateName}>
+              <span className="w-36 flex-shrink-0 truncate text-sm font-bold text-slate-200 md:min-w-0 md:flex-1" title={stateName}>
                 {stateName}
               </span>
 
