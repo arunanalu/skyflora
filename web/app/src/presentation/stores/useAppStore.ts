@@ -42,7 +42,7 @@ export const useAppStore = create<AppState>((set) => ({
 
   climateFilter: 'temperatura',
   politicsFilter: 'prop_beneficas',
-  co2Filter: 'media_emissao',
+  co2Filter: 'emissao_total',
 
   setCategory: (category) => set({ category }),
   setSelectedStateId: (selectedStateId) => set({ selectedStateId }),

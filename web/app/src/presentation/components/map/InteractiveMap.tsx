@@ -6,11 +6,16 @@ import { ClimateData } from '../../../domain/entities/ClimateData';
 import { CO2Emission } from '../../../domain/entities/CO2Emission';
 import { PoliticalProposal } from '../../../domain/entities/PoliticalProposal';
 import { getAtmosphereColor, getSoilColor, getTemperatureColor } from '../../lib/climatePresentation';
+import {
+  computeCO2Maxima,
+  getCO2DeforestationColor,
+  getCO2SectorColor,
+  getCO2TotalEmissionColor,
+} from '../../lib/co2Presentation';
 
 type MapDataRow = ClimateData | CO2Emission | PoliticalProposal;
 type DataCategory = 'climate' | 'politics' | 'co2';
 
-// Reads category + active filter from store — no props needed for section type
 interface InteractiveMapProps {
   data: MapDataRow[];
   categoryOverride?: DataCategory;
@@ -33,18 +38,21 @@ export function InteractiveMap({ data, categoryOverride, onStateClick, onSelecte
 
   const rowsByState = useMemo(() => new Map(data?.map(row => [row.stateId, row])), [data]);
 
+  // Precompute CO2 ranks/maxima once per dataset change
+  const co2Maxima = useMemo(() => {
+    if (type !== 'co2') return { maxDeforestation: 0, totalEmissionPercentile: new Map<string, number>() };
+    const co2Data = data?.filter((r): r is CO2Emission => 'totalEmission' in r) ?? [];
+    return computeCO2Maxima(co2Data);
+  }, [type, data]);
+
   const getStateColor = useCallback((id: string): string => {
     const row = rowsByState.get(id);
     if (!row) return '#1e293b';
 
     if (type === 'climate') {
       const climateRow = row as ClimateData;
-      if (activeFilter === 'atmosfera') {
-        return getAtmosphereColor(climateRow);
-      }
-      if (activeFilter === 'solo') {
-        return getSoilColor(climateRow);
-      }
+      if (activeFilter === 'atmosfera') return getAtmosphereColor(climateRow);
+      if (activeFilter === 'solo') return getSoilColor(climateRow);
       return getTemperatureColor(climateRow);
     }
 
@@ -53,20 +61,25 @@ export function InteractiveMap({ data, categoryOverride, onStateClick, onSelecte
     }
 
     const co2Row = row as CO2Emission;
-    if (activeFilter === 'principais_poluidores') {
-      switch (co2Row.topPolluter) {
-        case 'Desmatamento': return '#ef4444';
-        case 'Industria':    return '#6366f1';
-        case 'Transporte':   return '#f59e0b';
-        case 'Agropecuaria': return '#10b981';
-        default:             return '#475569';
-      }
+
+    if (activeFilter === 'setor_dominante') {
+      return getCO2SectorColor(co2Row.dominantSector);
     }
-    const em = co2Row.emissionAmount ?? 0;
-    if (em >= 150000) return '#7c3aed';
-    if (em >= 70000)  return '#8b5cf6';
-    return '#a78bfa';
-  }, [type, rowsByState, activeFilter]);
+
+    if (activeFilter === 'desmatamento') {
+      const deforestEntry = co2Row.top5.find(
+        (e) => e.sector === 'Mudança de Uso da Terra e Floresta',
+      );
+      return getCO2DeforestationColor(
+        deforestEntry?.sectorTotalEmission ?? 0,
+        co2Maxima.maxDeforestation,
+      );
+    }
+
+    // Default: emissao_total — percentile rank for even color spread across all states
+    const percentile = co2Maxima.totalEmissionPercentile.get(id) ?? 0;
+    return getCO2TotalEmissionColor(percentile);
+  }, [type, rowsByState, activeFilter, co2Maxima]);
 
   return (
     <div className="w-full h-full">

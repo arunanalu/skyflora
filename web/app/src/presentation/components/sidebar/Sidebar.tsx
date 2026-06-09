@@ -96,25 +96,52 @@ export function Sidebar() {
 
         {category === 'co2' && (
           <>
-            <button 
+            <button
               type="button"
-              className={`flex items-center justify-between text-sm hover:text-white transition-colors w-full text-left font-semibold p-3 rounded-lg border ${currentFilter === 'media_emissao' ? 'bg-white/10 border-white/5 text-slate-200' : 'border-transparent text-slate-400'}`}
-              onClick={() => setFilter('media_emissao')}
+              className={`flex items-center justify-between text-sm hover:text-white transition-colors w-full text-left font-semibold p-3 rounded-lg border ${currentFilter === 'emissao_total' ? 'bg-white/10 border-white/5 text-slate-200' : 'border-transparent text-slate-400'}`}
+              onClick={() => setFilter('emissao_total')}
             >
               <span className="flex items-center gap-2">
-                <span className="text-slate-400">🏭</span> Média de emissão
+                <span className="text-slate-400">📊</span> Emissão total
               </span>
             </button>
 
-            <button 
+            <button
               type="button"
-              className={`flex items-center justify-between text-sm hover:text-white transition-colors w-full text-left font-semibold p-3 mt-2 rounded-lg border ${currentFilter === 'principais_poluidores' ? 'bg-white/10 border-white/5 text-slate-200' : 'border-transparent text-slate-400'}`}
-              onClick={() => setFilter('principais_poluidores')}
+              className={`flex items-center justify-between text-sm hover:text-white transition-colors w-full text-left font-semibold p-3 mt-2 rounded-lg border ${currentFilter === 'setor_dominante' ? 'bg-white/10 border-white/5 text-slate-200' : 'border-transparent text-slate-400'}`}
+              onClick={() => setFilter('setor_dominante')}
             >
               <span className="flex items-center gap-2">
-                <span className="text-slate-400">🔥</span> Principais poluidores
+                <span className="text-slate-400">🏭</span> Setor dominante
               </span>
             </button>
+
+            <button
+              type="button"
+              className={`flex items-center justify-between text-sm hover:text-white transition-colors w-full text-left font-semibold p-3 mt-2 rounded-lg border ${currentFilter === 'desmatamento' ? 'bg-white/10 border-white/5 text-slate-200' : 'border-transparent text-slate-400'}`}
+              onClick={() => setFilter('desmatamento')}
+            >
+              <span className="flex items-center gap-2">
+                <span className="text-slate-400">🌳</span> Desmatamento
+              </span>
+            </button>
+
+            {currentFilter === 'setor_dominante' && (
+              <div className="mt-3 flex flex-col gap-1.5 ml-1">
+                {[
+                  { color: '#16a34a', label: 'Floresta/Terra' },
+                  { color: '#b45309', label: 'Agropecuária' },
+                  { color: '#2563eb', label: 'Energia' },
+                  { color: '#9333ea', label: 'Ind. processos' },
+                  { color: '#6b7280', label: 'Resíduos' },
+                ].map(({ color, label }) => (
+                  <div key={label} className="flex items-center gap-2 text-xs text-slate-400">
+                    <span className="inline-block h-2.5 w-2.5 rounded-full flex-shrink-0" style={{ backgroundColor: color }} />
+                    {label}
+                  </div>
+                ))}
+              </div>
+            )}
           </>
         )}
       </div>

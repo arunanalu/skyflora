@@ -98,13 +98,78 @@ export class MockRepository implements IDataRepository {
 
   async getCO2Emissions(year: number): Promise<CO2Emission[]> {
     return [
-      { stateId: 'SP', emissionAmount: 150000, year, topPolluter: 'Indústria', polluterEmission: 80000 },
-      { stateId: 'RJ', emissionAmount: 90000, year, topPolluter: 'Transporte', polluterEmission: 45000 },
-      { stateId: 'MT', emissionAmount: 300000, year, topPolluter: 'Desmatamento', polluterEmission: 210000 },
-      { stateId: 'AM', emissionAmount: 20000, year, topPolluter: 'Desmatamento', polluterEmission: 12000 },
-      { stateId: 'BA', emissionAmount: 70000, year, topPolluter: 'Agropecuária', polluterEmission: 35000 },
-      { stateId: 'RS', emissionAmount: 85000, year, topPolluter: 'Agropecuária', polluterEmission: 42000 },
-      { stateId: 'MG', emissionAmount: 120000, year, topPolluter: 'Indústria', polluterEmission: 65000 }
+      {
+        stateId: 'PA', stateName: 'Pará', year, totalEmission: 272956801,
+        dominantSector: 'Mudança de Uso da Terra e Floresta',
+        top5: [
+          { sector: 'Mudança de Uso da Terra e Floresta', sectorTotalEmission: 205535488, sectorShareOfState: 74.0, category: 'Alterações de uso da terra', categoryEmission: 194101765, categoryShareOfSector: 94.4, recordCount: 400 },
+          { sector: 'Agropecuária', sectorTotalEmission: 55114468, sectorShareOfState: 19.8, category: 'Fermentação entérica', categoryEmission: 42876474, categoryShareOfSector: 77.8, recordCount: 18 },
+          { sector: 'Agropecuária', sectorTotalEmission: 55114468, sectorShareOfState: 19.8, category: 'Solos manejados', categoryEmission: 10669452, categoryShareOfSector: 19.4, recordCount: 140 },
+          { sector: 'Mudança de Uso da Terra e Floresta', sectorTotalEmission: 205535488, sectorShareOfState: 74.0, category: 'Resíduos florestais', categoryEmission: 10009988, categoryShareOfSector: 4.9, recordCount: 177 },
+          { sector: 'Energia', sectorTotalEmission: 12306844, sectorShareOfState: 4.4, category: 'Transportes', categoryEmission: 8270661, categoryShareOfSector: 67.2, recordCount: 65 },
+        ],
+        processedAt: '2026-06-08 02:18:16',
+      },
+      {
+        stateId: 'MT', stateName: 'Mato Grosso', year, totalEmission: 228721393,
+        dominantSector: 'Mudança de Uso da Terra e Floresta',
+        top5: [
+          { sector: 'Mudança de Uso da Terra e Floresta', sectorTotalEmission: 125813449, sectorShareOfState: 54.4, category: 'Alterações de uso da terra', categoryEmission: 118262763, categoryShareOfSector: 94.0, recordCount: 556 },
+          { sector: 'Agropecuária', sectorTotalEmission: 88866389, sectorShareOfState: 38.4, category: 'Fermentação entérica', categoryEmission: 55539158, categoryShareOfSector: 62.5, recordCount: 27 },
+          { sector: 'Agropecuária', sectorTotalEmission: 88866389, sectorShareOfState: 38.4, category: 'Solos manejados', categoryEmission: 30698410, categoryShareOfSector: 34.5, recordCount: 210 },
+          { sector: 'Energia', sectorTotalEmission: 14041554, sectorShareOfState: 6.1, category: 'Transportes', categoryEmission: 8709021, categoryShareOfSector: 62.0, recordCount: 88 },
+          { sector: 'Mudança de Uso da Terra e Floresta', sectorTotalEmission: 125813449, sectorShareOfState: 54.4, category: 'Resíduos florestais', categoryEmission: 5836325, categoryShareOfSector: 4.6, recordCount: 226 },
+        ],
+        processedAt: '2026-06-08 02:18:16',
+      },
+      {
+        stateId: 'SP', stateName: 'São Paulo', year, totalEmission: 138381438,
+        dominantSector: 'Energia',
+        top5: [
+          { sector: 'Energia', sectorTotalEmission: 85830929, sectorShareOfState: 59.1, category: 'Transportes', categoryEmission: 48155071, categoryShareOfSector: 56.1, recordCount: 70 },
+          { sector: 'Agropecuária', sectorTotalEmission: 34583796, sectorShareOfState: 23.8, category: 'Fermentação entérica', categoryEmission: 18017381, categoryShareOfSector: 52.1, recordCount: 18 },
+          { sector: 'Agropecuária', sectorTotalEmission: 34583796, sectorShareOfState: 23.8, category: 'Solos manejados', categoryEmission: 15049749, categoryShareOfSector: 43.5, recordCount: 140 },
+          { sector: 'Energia', sectorTotalEmission: 85830929, sectorShareOfState: 59.1, category: 'Industrial', categoryEmission: 13207210, categoryShareOfSector: 15.4, recordCount: 225 },
+          { sector: 'Resíduos', sectorTotalEmission: 17966712, sectorShareOfState: 12.4, category: 'Disposição final', categoryEmission: 12416709, categoryShareOfSector: 69.1, recordCount: 4 },
+        ],
+        processedAt: '2026-06-08 02:18:16',
+      },
+      {
+        stateId: 'GO', stateName: 'Goiás', year, totalEmission: 96747989,
+        dominantSector: 'Agropecuária',
+        top5: [
+          { sector: 'Agropecuária', sectorTotalEmission: 59610510, sectorShareOfState: 61.1, category: 'Fermentação entérica', categoryEmission: 39468583, categoryShareOfSector: 66.2, recordCount: 18 },
+          { sector: 'Agropecuária', sectorTotalEmission: 59610510, sectorShareOfState: 61.1, category: 'Solos manejados', categoryEmission: 18164054, categoryShareOfSector: 30.5, recordCount: 140 },
+          { sector: 'Mudança de Uso da Terra e Floresta', sectorTotalEmission: 18581777, sectorShareOfState: 19.0, category: 'Alterações de uso da terra', categoryEmission: 16643473, categoryShareOfSector: 89.6, recordCount: 338 },
+          { sector: 'Energia', sectorTotalEmission: 14541690, sectorShareOfState: 14.9, category: 'Transportes', categoryEmission: 9350484, categoryShareOfSector: 64.3, recordCount: 66 },
+          { sector: 'Resíduos', sectorTotalEmission: 4013010, sectorShareOfState: 4.1, category: 'Disposição final', categoryEmission: 2633165, categoryShareOfSector: 65.6, recordCount: 4 },
+        ],
+        processedAt: '2026-06-08 02:18:16',
+      },
+      {
+        stateId: 'RJ', stateName: 'Rio de Janeiro', year, totalEmission: 71680916,
+        dominantSector: 'Energia',
+        top5: [
+          { sector: 'Energia', sectorTotalEmission: 44548985, sectorShareOfState: 62.2, category: 'Produção de combustíveis', categoryEmission: 21699394, categoryShareOfSector: 48.7, recordCount: 21 },
+          { sector: 'Energia', sectorTotalEmission: 44548985, sectorShareOfState: 62.2, category: 'Transportes', categoryEmission: 13020976, categoryShareOfSector: 29.2, recordCount: 24 },
+          { sector: 'Resíduos', sectorTotalEmission: 11471123, sectorShareOfState: 16.0, category: 'Disposição final', categoryEmission: 9443658, categoryShareOfSector: 82.3, recordCount: 2 },
+          { sector: 'Processos Industriais', sectorTotalEmission: 7509686, sectorShareOfState: 10.5, category: 'Produção de metais', categoryEmission: 5862177, categoryShareOfSector: 78.1, recordCount: 4 },
+          { sector: 'Energia', sectorTotalEmission: 44548985, sectorShareOfState: 62.2, category: 'Geração de eletricidade (serviço público)', categoryEmission: 5121315, categoryShareOfSector: 11.5, recordCount: 4 },
+        ],
+        processedAt: '2026-06-08 02:18:16',
+      },
+      {
+        stateId: 'AC', stateName: 'Acre', year, totalEmission: 44920284,
+        dominantSector: 'Mudança de Uso da Terra e Floresta',
+        top5: [
+          { sector: 'Mudança de Uso da Terra e Floresta', sectorTotalEmission: 33871827, sectorShareOfState: 74.8, category: 'Alterações de uso da terra', categoryEmission: 32063899, categoryShareOfSector: 94.7, recordCount: 83 },
+          { sector: 'Agropecuária', sectorTotalEmission: 10205462, sectorShareOfState: 22.5, category: 'Fermentação entérica', categoryEmission: 8348757, categoryShareOfSector: 81.8, recordCount: 9 },
+          { sector: 'Mudança de Uso da Terra e Floresta', sectorTotalEmission: 33871827, sectorShareOfState: 74.8, category: 'Resíduos florestais', categoryEmission: 1609213, categoryShareOfSector: 4.8, recordCount: 40 },
+          { sector: 'Agropecuária', sectorTotalEmission: 10205462, sectorShareOfState: 22.5, category: 'Solos manejados', categoryEmission: 1549676, categoryShareOfSector: 15.2, recordCount: 70 },
+          { sector: 'Energia', sectorTotalEmission: 843994, sectorShareOfState: 1.9, category: 'Transportes', categoryEmission: 482812, categoryShareOfSector: 57.2, recordCount: 22 },
+        ],
+        processedAt: '2026-06-08 02:18:16',
+      },
     ];
   }
 }

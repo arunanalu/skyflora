@@ -5,10 +5,15 @@ import { AnimatePresence, motion } from 'framer-motion';
 import { ArrowUpRight, X } from 'lucide-react';
 import { useAppStore } from '../../stores/useAppStore';
 import { formatClimateNumber, getClimateSummary } from '../../lib/climatePresentation';
+import { formatCO2Emission, getCO2SectorColor } from '../../lib/co2Presentation';
+import { getCO2CategoryExplanation } from '../../lib/co2Explanations';
+import { CO2CategoryEntry, CO2Sector } from '../../../domain/entities/CO2Emission';
 
 type DetailRow = {
+  // shared
   id?: string;
   stateId?: string;
+  // climate
   title?: string;
   status?: string;
   isBeneficial?: boolean;
@@ -26,14 +31,17 @@ type DetailRow = {
   vegetationCoverIndexMean?: number | null;
   precipitationTotalMm?: number | null;
   fireSpotsTotal?: number | null;
-  emissionAmount?: number;
-  topPolluter?: string;
-  polluterEmission?: number;
+  // co2 (new rich contract)
+  stateName?: string;
+  totalEmission?: number;
+  dominantSector?: CO2Sector;
+  top5?: CO2CategoryEntry[];
+  processedAt?: string | null;
 };
 
 export function StateDetailsModal({ data = [], rightOffset = 32 }: { data?: DetailRow[]; rightOffset?: number }) {
   const panelRef = useRef<HTMLElement | null>(null);
-  const { selectedStateId, setSelectedStateId, setMunicipalDrilldownUf, category, climateFilter, co2Filter } = useAppStore();
+  const { selectedStateId, setSelectedStateId, setMunicipalDrilldownUf, category, climateFilter } = useAppStore();
 
   const close = () => setSelectedStateId(null);
   const stateData = data.filter((d) => d.stateId === selectedStateId);
@@ -112,21 +120,84 @@ export function StateDetailsModal({ data = [], rightOffset = 32 }: { data?: Deta
   };
 
   const renderCO2Content = () => {
-    if (!firstRow.emissionAmount) return <div className="text-slate-500">Dados nao disponiveis</div>;
-
-    if (co2Filter === 'principais_poluidores') {
-      return (
-        <div className="grid grid-cols-2 gap-3">
-          <MetricCard label="Setor principal" value={firstRow.topPolluter || '-'} tone="indigo" />
-          <MetricCard label="Emissao do setor" value={`${firstRow.polluterEmission?.toLocaleString('pt-BR') || 0} Ton`} />
-        </div>
-      );
+    if (!firstRow.totalEmission || !firstRow.top5) {
+      return <div className="text-slate-500">Dados nao disponiveis</div>;
     }
 
+    const { totalEmission, dominantSector, top5 } = firstRow;
+    const sectorColor = dominantSector ? getCO2SectorColor(dominantSector) : '#6b7280';
+    const maxCategoryEmission = top5[0]?.categoryEmission ?? 1;
+
+    // Share of total state emission for each category bar
+    const stateTotal = totalEmission > 0 ? totalEmission : 1;
+
     return (
-      <div className="grid grid-cols-2 gap-3">
-        <MetricCard label="Emissao total" value={`${firstRow.emissionAmount.toLocaleString('pt-BR')} Ton`} tone="purple" />
-        <MetricCard label="Impacto relativo" value={`${((firstRow.emissionAmount / 300000) * 100).toFixed(1)}%`} />
+      <div className="flex flex-col gap-4">
+        {/* Summary header */}
+        <div className="flex items-start justify-between gap-3">
+          <div>
+            <div className="text-[10px] font-bold uppercase tracking-widest text-slate-500 mb-0.5">Emissão total 2024</div>
+            <div className="font-serif text-3xl text-white">{formatCO2Emission(totalEmission)}</div>
+            <div className="text-xs text-slate-400 mt-0.5">tCO₂eq</div>
+          </div>
+          {dominantSector && (
+            <div className="flex flex-col items-end gap-1">
+              <div className="text-[10px] font-bold uppercase tracking-widest text-slate-500">Setor dominante</div>
+              <div
+                className="text-xs font-semibold px-2 py-1 rounded-lg"
+                style={{ backgroundColor: `${sectorColor}22`, color: sectorColor, border: `1px solid ${sectorColor}44` }}
+              >
+                {dominantSector}
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* Top 5 emission categories */}
+        <div className="flex flex-col gap-3">
+          <div className="text-[10px] font-bold uppercase tracking-widest text-slate-500">Top 5 fontes de emissão</div>
+          {top5.map((entry, i) => {
+            const shareOfState = (entry.categoryEmission / stateTotal) * 100;
+            const barWidth = (entry.categoryEmission / maxCategoryEmission) * 100;
+            const explanation = getCO2CategoryExplanation(entry.category);
+            const entryColor = getCO2SectorColor(entry.sector);
+
+            return (
+              <div key={`${entry.category}-${i}`} className="rounded-2xl border border-slate-700/40 bg-slate-950/30 p-3">
+                <div className="flex items-baseline justify-between gap-2 mb-1.5">
+                  <span className="text-sm font-semibold text-slate-200 leading-tight">{entry.category}</span>
+                  <span className="text-xs tabular-nums text-slate-400 flex-shrink-0">{shareOfState.toFixed(1)}%</span>
+                </div>
+
+                {/* Bar */}
+                <div className="mb-2 h-1.5 w-full overflow-hidden rounded-full bg-slate-800">
+                  <div
+                    className="h-full rounded-full transition-all"
+                    style={{ width: `${barWidth}%`, backgroundColor: entryColor }}
+                  />
+                </div>
+
+                <div className="flex items-center justify-between gap-2 mb-1.5">
+                  <span className="font-serif text-base text-white">{formatCO2Emission(entry.categoryEmission)}</span>
+                  <span
+                    className="text-[10px] px-1.5 py-0.5 rounded font-medium"
+                    style={{ backgroundColor: `${entryColor}20`, color: entryColor }}
+                  >
+                    {entry.sector.length > 20 ? entry.sector.split(' ')[0] : entry.sector}
+                  </span>
+                </div>
+
+                <p className="text-[11px] leading-relaxed text-slate-500">{explanation}</p>
+              </div>
+            );
+          })}
+        </div>
+
+        {/* Footer */}
+        <div className="text-[10px] text-slate-600 leading-relaxed border-t border-slate-800 pt-3">
+          Fonte: SEEG / MCTI · Ano-base: 2024 · Unidade: tCO₂eq<br />
+          Valores representam os 5 maiores emissores por estado.
+        </div>
       </div>
     );
   };
@@ -166,17 +237,24 @@ export function StateDetailsModal({ data = [], rightOffset = 32 }: { data?: Deta
                 <span className="mb-3 block text-[10px] font-bold uppercase tracking-[0.28em] text-emerald-300">Estado em foco</span>
                 <div className="flex items-end gap-4">
                   <h2 className="font-serif text-6xl leading-none text-white">{selectedStateId}</h2>
+                  {category === 'co2' && firstRow.stateName && (
+                    <span className="mb-1 text-sm text-slate-400 font-medium">{firstRow.stateName}</span>
+                  )}
                   <div className="mb-1 h-px flex-1 bg-gradient-to-r from-emerald-400/70 to-transparent" />
                 </div>
               </div>
 
-              <div className="mb-5 rounded-3xl border border-slate-700/55 bg-slate-950/28 p-5">
-                <h3 className="mb-2 text-lg font-semibold text-white">
-                  {climateSummary?.title ?? 'Dados consolidados'}
-                </h3>
-                <p className="mb-4 text-sm leading-relaxed text-slate-400">
-                  {climateSummary?.description ?? 'Um recorte do estado selecionado para comparar indicadores ambientais, pressoes politicas e sinais de emissao com mais contexto.'}
-                </p>
+              <div className={`mb-5 rounded-3xl border border-slate-700/55 bg-slate-950/28 p-5 ${category === 'co2' ? 'overflow-y-auto max-h-[calc(100vh-22rem)]' : ''}`}>
+                {category !== 'co2' && (
+                  <>
+                    <h3 className="mb-2 text-lg font-semibold text-white">
+                      {climateSummary?.title ?? 'Dados consolidados'}
+                    </h3>
+                    <p className="mb-4 text-sm leading-relaxed text-slate-400">
+                      {climateSummary?.description ?? 'Um recorte do estado selecionado para comparar indicadores ambientais, pressoes politicas e sinais de emissao com mais contexto.'}
+                    </p>
+                  </>
+                )}
                 {category === 'climate' && renderClimateContent()}
                 {category === 'politics' && renderPoliticsContent()}
                 {category === 'co2' && renderCO2Content()}

@@ -37,6 +37,8 @@ export default function HomePage() {
   const [mapCategory, setMapCategory] = useState<'climate' | 'politics' | 'co2'>('climate');
   const [climateLoading, setClimateLoading] = useState(false);
   const [climateError, setClimateError] = useState<string | null>(null);
+  const [co2Loading, setCo2Loading] = useState(false);
+  const [co2Error, setCo2Error] = useState<string | null>(null);
   const prevCat = useRef<Category>(category);
   useEffect(() => {
     if (prevCat.current !== category) {
@@ -88,9 +90,29 @@ export default function HomePage() {
   }, []);
 
   useEffect(() => {
-    fetch(`/api/co2?year=${co2Date.year}`)
-      .then((response) => response.json())
-      .then((data) => { if (!data.error) setCo2Data(data); });
+    const controller = new AbortController();
+
+    Promise.resolve().then(() => {
+      if (!controller.signal.aborted) {
+        setCo2Loading(true);
+        setCo2Error(null);
+      }
+    });
+
+    fetch(`/api/co2?year=${co2Date.year}`, { signal: controller.signal })
+      .then((response) => {
+        if (!response.ok) throw new Error('Erro ao buscar dados de CO2');
+        return response.json();
+      })
+      .then((data) => { if (!data.error) setCo2Data(data); })
+      .catch((error) => {
+        if (error.name !== 'AbortError') {
+          setCo2Error('Nao foi possivel carregar os dados de CO₂.');
+        }
+      })
+      .finally(() => { if (!controller.signal.aborted) setCo2Loading(false); });
+
+    return () => controller.abort();
   }, [co2Date.year]);
 
   const sectionIdx     = useMotionValue(0);
@@ -371,6 +393,15 @@ export default function HomePage() {
             style={{ right: 32, top: 128 }}
           >
             {climateLoading ? 'Carregando clima...' : climateError}
+          </div>
+        )}
+
+        {category === 'co2' && !hasFocusedState && (co2Loading || co2Error) && (
+          <div
+            className="fixed z-[20] rounded-xl border border-white/10 bg-slate-950/80 px-4 py-2 text-xs font-semibold text-slate-300 backdrop-blur-md"
+            style={{ right: 32, top: 128 }}
+          >
+            {co2Loading ? 'Carregando CO₂...' : co2Error}
           </div>
         )}
 

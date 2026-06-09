@@ -9,6 +9,7 @@ import {
   getSoilStatus,
   getTemperatureStatus,
 } from '../../lib/climatePresentation';
+import { formatCO2Emission } from '../../lib/co2Presentation';
 
 type TableRow = ClimateData | PoliticalProposal | CO2Emission;
 
@@ -57,11 +58,12 @@ function isPoliticsRow(row: TableRow): row is PoliticalProposal {
 }
 
 function isCO2Row(row: TableRow): row is CO2Emission {
-  return 'emissionAmount' in row;
+  return 'totalEmission' in row;
 }
 
 function getStateName(row: TableRow): string {
   if (isClimateRow(row) && row.stateName) return row.stateName;
+  if (isCO2Row(row) && row.stateName) return row.stateName;
   if ('title' in row && row.title) return String(row.title);
   return STATE_NAMES[row.stateId] || row.stateId;
 }
@@ -127,9 +129,13 @@ function getColumns(category: string, filter: string): ColDef[] {
 
   // co2
   return [
-    { header: 'Emissao (Ton)',    value: r => isCO2Row(r) ? r.emissionAmount.toLocaleString('pt-BR')                       : '-', width: 'w-36' },
-    { header: 'Impacto relativo', value: r => isCO2Row(r) ? `${((r.emissionAmount / 300000) * 100).toFixed(1)}%`           : '-', width: 'w-32' },
-    { header: 'Setor principal',  value: r => isCO2Row(r) ? (r.topPolluter || '-')                                         : '-', width: 'w-32' },
+    { header: 'Emissão total',    value: r => isCO2Row(r) ? formatCO2Emission(r.totalEmission)   : '-', width: 'w-32' },
+    { header: 'Setor dominante',  value: r => isCO2Row(r) ? r.dominantSector                     : '-', width: 'flex-1 min-w-0' },
+    { header: '% estado',         value: r => {
+        if (!isCO2Row(r)) return '-';
+        const dominant = r.top5.find(e => e.sector === r.dominantSector);
+        return dominant ? `${dominant.sectorShareOfState.toFixed(1)}%` : '-';
+      }, width: 'w-20' },
   ];
 }
 
