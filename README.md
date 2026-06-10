@@ -45,5 +45,5 @@ Este projeto é desenvolvido com a dedicação dos seguintes colaboradores:
 - **[Pedro Bataglia](https://github.com/Pedro-Bataglia)**
 - **[arunanalu](https://github.com/arunanalu)**
 - **[Victor Guida](https://github.com/Arilden)**
-
+- **[Rosimeri Santos](https://github.com/rosystt)**
 
