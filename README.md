@@ -1,6 +1,6 @@
 # 🌍 Skyflora
 
-**Skyflora** é um projeto acadêmico (de faculdade) focado na extração, cruzamento e análise de dados provenientes de fontes e APIs públicas, e na sua apresentação visual interativa. O objetivo central é criar uma arquitetura de dados e uma interface web capazes de investigar e expor associações e correlações entre eventos climáticos/ambientais, emissões de CO2 e o comportamento político no Brasil com fins acadêmicos.
+**Skyflora** é um projeto acadêmico focado na extração, cruzamento e análise de dados provenientes de fontes e APIs públicas, e na sua apresentação visual interativa. O objetivo central é criar uma arquitetura de dados e uma interface web capazes de investigar e expor associações e correlações entre eventos climáticos/ambientais, emissões de CO2 e o comportamento político no Brasil com fins acadêmicos.
 
 Ao disponibilizar este repositório de forma aberta, nossa intenção é que os scripts de extração, transformação, a documentação e a estrutura web possam ser livremente reaproveitados por pesquisadores, desenvolvedores, estudantes ou qualquer pessoa interessada em engenharia de dados, ciência de dados, desenvolvimento web, meio ambiente e transparência governamental.
 
